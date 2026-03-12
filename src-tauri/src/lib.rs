@@ -5,10 +5,16 @@ use tauri::{
 };
 use tauri_plugin_store::StoreExt;
 
+const WINDOW_WIDTH: f64 = 440.0;
+const WINDOW_HEIGHT: f64 = 620.0;
+const PADDING: f64 = 8.0;
+
 #[tauri::command]
 fn get_api_key(app: tauri::AppHandle) -> Option<String> {
     let store = app.store("store.json").ok()?;
-    store.get("api_key").and_then(|v| v.as_str().map(String::from))
+    store
+        .get("api_key")
+        .and_then(|v| v.as_str().map(String::from))
 }
 
 #[tauri::command]
@@ -19,11 +25,36 @@ fn set_api_key(app: tauri::AppHandle, key: String) {
     }
 }
 
-fn toggle_window<R: Runtime>(app: &tauri::AppHandle<R>) {
+fn toggle_window<R: Runtime>(app: &tauri::AppHandle<R>, tray_rect: &tauri::Rect) {
     if let Some(window) = app.get_webview_window("main") {
         if window.is_visible().unwrap_or(false) {
             let _ = window.hide();
         } else {
+            // Get the tray icon position and size
+            let (tray_x, tray_y, tray_width, tray_height) =
+                match (&tray_rect.position, &tray_rect.size) {
+                    (tauri::Position::Physical(pos), tauri::Size::Physical(size)) => (
+                        pos.x as f64,
+                        pos.y as f64,
+                        size.width as f64,
+                        size.height as f64,
+                    ),
+                    (tauri::Position::Logical(pos), tauri::Size::Logical(size)) => {
+                        (pos.x, pos.y, size.width, size.height)
+                    }
+                    _ => (0.0, 0.0, 0.0, 0.0), // Fallback
+                };
+
+            // Position window centered below the tray icon
+            let tray_center_x = tray_x + (tray_width / 2.0);
+            let tray_bottom_y = tray_y + tray_height;
+            let window_x = tray_center_x - (WINDOW_WIDTH / 2.0);
+            let window_y = tray_bottom_y + PADDING;
+
+            let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                x: window_x as i32,
+                y: window_y as i32,
+            }));
             let _ = window.show();
             let _ = window.set_focus();
         }
@@ -52,10 +83,11 @@ pub fn run() {
                     if let TrayIconEvent::Click {
                         button: MouseButton::Left,
                         button_state: MouseButtonState::Up,
+                        rect,
                         ..
                     } = event
                     {
-                        toggle_window(&handle);
+                        toggle_window(&handle, &rect);
                     }
                 })
                 .build(app)?;

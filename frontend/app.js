@@ -17,11 +17,10 @@ async function setApiKey(key) {
 
 // ── Models ────────────────────────────────────────────────────────────────────
 const MODELS = [
+  "qwen/qwen3-32b:nitro",
+  "google/gemini-2.5-pro:online",
   "anthropic/claude-sonnet-4-5:online",
-  "anthropic/claude-3.5-sonnet:online",
   "openai/gpt-4o:online",
-  "google/gemini-2.0-flash-001:online",
-  "meta-llama/llama-3.3-70b-instruct:online",
 ];
 const DEFAULT_MODEL = MODELS[0];
 
