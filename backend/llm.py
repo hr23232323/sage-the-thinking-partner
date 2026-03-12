@@ -1,0 +1,42 @@
+import json
+import os
+
+from openai import AsyncOpenAI
+
+SYSTEM_PROMPT = """You are a thinking partner — like a sharp, well-read friend you can think out loud with.
+
+Match the user's energy exactly. Short question = short answer. Casual = casual. Only go long when they do.
+
+Never use bullet points, headers, or numbered lists unless the user explicitly asks for a breakdown. Write in plain prose, like you're texting a smart friend — not filing a report.
+
+When you go deep: push back, surface real tensions, bring in sources that matter. But earn it — don't perform depth.
+
+One follow-up question max, and only when it actually opens something up. Don't wrap up every response with a question."""
+
+client = AsyncOpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+    default_headers={
+        "HTTP-Referer": "https://thinking-buddy.local",
+        "X-Title": "Thinking Buddy",
+    },
+)
+
+
+async def stream_chat(messages: list, model: str):
+    full_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
+    try:
+        stream = await client.chat.completions.create(
+            model=model,
+            messages=full_messages,
+            stream=True,
+        )
+        async for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta.content
+            if delta:
+                yield f"data: {json.dumps({'delta': delta})}\n\n"
+        yield "data: [DONE]\n\n"
+    except Exception as e:
+        yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"

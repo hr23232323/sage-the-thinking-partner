@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header>
+    <div class="header-left">
+      <span class="logo">sage</span>
+      <span class="tagline">think together</span>
+    </div>
+    <div class="header-right">
+      <select id="model-select" title="Select model"></select>
+      <label class="web-toggle" title="Enable web search (appends :online)">
+        <input type="checkbox" id="web-search-toggle" checked />
+        <span class="web-pill">
+          <span class="web-dot"></span>
+          web
+        </span>
+      </label>
+      <button id="new-btn">new thread</button>
+    </div>
+  </header>
+
+  <main id="conversation">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-inner">
+        <div class="empty-symbol">◆</div>
+        <p class="empty-prompt" id="empty-prompt">What are you wrestling with today?</p>
+        <p class="empty-hint">A question, a half-baked idea, something that doesn't add up.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="compose">
+      <div class="compose-field">
+        <textarea id="input" placeholder="What are you thinking about?" rows="1" autofocus></textarea>
+      </div>
+      <div class="compose-actions">
+        <span class="compose-hint">↵ send &nbsp;·&nbsp; shift+↵ newline</span>
+        <button id="send-btn" title="Send">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="10" y1="17" x2="10" y2="4"/>
+            <polyline points="4 9 10 4 16 9"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>
