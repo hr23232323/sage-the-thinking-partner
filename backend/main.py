@@ -16,12 +16,13 @@ app = FastAPI(title="Thinking Buddy")
 class ChatRequest(BaseModel):
     messages: list[dict]
     model: str
+    mode: str | None = None
 
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
     return StreamingResponse(
-        stream_chat(req.messages, req.model),
+        stream_chat(req.messages, req.model, req.mode),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

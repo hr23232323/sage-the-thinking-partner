@@ -3,6 +3,30 @@ import * as smd from "https://cdn.jsdelivr.net/npm/streaming-markdown/smd.min.js
 /** @type {Array<{role: string, content: string}>} */
 let messages = [];
 let isStreaming = false;
+let activeMode = null;
+
+const TOPICS = [
+  { label: "should I quit my job?",              prominent: true,  starter: "I'm thinking about quitting my job but I'm not sure if I'm being rational or just burnt out. Help me think through it." },
+  { label: "am I actually productive?",          prominent: false, starter: "I feel busy all the time but I'm not sure I'm making real progress. How do I figure out if I'm actually productive or just active?" },
+  { label: "how do I stop procrastinating?",     prominent: true,  starter: "I keep procrastinating on things that actually matter to me. It's not laziness — what's really going on and how do I fix it?" },
+  { label: "is social media worth it?",          prominent: false, starter: "I know social media is probably bad for me but I keep using it. Is the cost actually as high as people say, and what would I lose if I quit?" },
+  { label: "how do I negotiate my salary?",      prominent: false, starter: "I want to negotiate my salary but I don't know how to approach it. Walk me through how to think about this." },
+  { label: "AI is going to take my job",         prominent: true,  starter: "I'm genuinely worried AI is going to make my job obsolete in the next few years. How should I be thinking about this?" },
+  { label: "should I start a side project?",     prominent: false, starter: "I keep thinking about starting a side project but never do. Help me figure out if I actually want to or if I'm just romanticizing it." },
+  { label: "I can't stop doom-scrolling",        prominent: false, starter: "I pick up my phone and lose 30 minutes without even meaning to. What's actually happening in my brain and how do I break the loop?" },
+  { label: "how do I build better habits?",      prominent: true,  starter: "I've tried building habits a dozen times and they never stick. What am I getting wrong?" },
+  { label: "should I move to a new city?",       prominent: false, starter: "I'm considering moving to a new city for a fresh start but I'm scared I'm running away from something. Help me think through it honestly." },
+  { label: "how do I deal with burnout?",        prominent: false, starter: "I think I'm burnt out but I'm not sure I can afford to slow down. What does real recovery actually look like?" },
+  { label: "investing — where do I start?",      prominent: false, starter: "I know I should be investing but the whole thing feels overwhelming. Break down how I should actually think about starting." },
+  { label: "my relationship is in a rut",        prominent: true,  starter: "My relationship feels like it's on autopilot. We're not fighting but we're not really connecting either. What's going on and what do I do?" },
+  { label: "am I in the right career?",          prominent: false, starter: "I'm good at my job but I'm not sure I actually care about it. How do I figure out if I'm in the right career or just stuck?" },
+  { label: "how do I have hard conversations?",  prominent: false, starter: "There's a conversation I've been avoiding for weeks because I'm scared of how it'll go. How should I think about approaching it?" },
+  { label: "is college worth it anymore?",       prominent: false, starter: "Is a college degree actually worth the cost and time in 2025, or has that calculus fundamentally changed?" },
+  { label: "how do I actually focus?",           prominent: true,  starter: "I sit down to do deep work and within 10 minutes I'm distracted. What does real focus take, and how do I build it?" },
+  { label: "I feel stuck",                       prominent: false, starter: "I feel stuck — like I'm not moving forward in any meaningful area of my life. Help me figure out what's actually going on." },
+  { label: "how do I spend money better?",       prominent: false, starter: "I make decent money but feel like I have nothing to show for it. How do I think about spending vs. saving vs. actually enjoying my life?" },
+  { label: "what even is success?",              prominent: true,  starter: "I've been chasing a version of success that I'm not sure is actually mine. How do I figure out what I actually want?" },
+];
 
 const EMPTY_PROMPTS = [
   "What are you wrestling with today?",
@@ -14,6 +38,25 @@ const EMPTY_PROMPTS = [
 ];
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
+
+function renderTopicWall() {
+  const wall = document.getElementById("topic-wall");
+  if (!wall) return;
+  wall.innerHTML = "";
+  TOPICS.forEach(topic => {
+    const chip = document.createElement("button");
+    chip.className = "topic-chip" + (topic.prominent ? " prominent" : "");
+    chip.textContent = topic.label;
+    chip.addEventListener("click", () => {
+      const input = document.getElementById("input");
+      input.value = topic.starter;
+      autoResize(input);
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    });
+    wall.appendChild(chip);
+  });
+}
 
 async function init() {
   // Rotate empty state prompts
@@ -97,7 +140,7 @@ async function sendMessage() {
     const response = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, model: getSelectedModel() }),
+      body: JSON.stringify({ messages, model: getSelectedModel(), mode: activeMode }),
     });
 
     if (!response.ok) {
@@ -167,6 +210,9 @@ async function sendMessage() {
     contentEl.innerHTML = `<span class="error-msg">${escapeHtml(fullText)}</span>`;
   } finally {
     if (!hasError && fullText) messages.push({ role: "assistant", content: fullText });
+    // Reset mode after each send (one-shot)
+    activeMode = null;
+    document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
     setStreaming(false);
     scrollToBottom();
   }
@@ -233,9 +279,11 @@ function newConversation() {
         <div class="empty-symbol">◆</div>
         <p class="empty-prompt" id="empty-prompt">What are you wrestling with today?</p>
         <p class="empty-hint">A question, a half-baked idea, something that doesn't add up.</p>
+        <div class="topic-wall" id="topic-wall"></div>
       </div>
     </div>
   `;
+  renderTopicWall();
 }
 
 // ── Textarea auto-resize + keyboard ──────────────────────────────────────────
@@ -258,5 +306,21 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("send-btn").addEventListener("click", sendMessage);
   document.getElementById("new-btn").addEventListener("click", newConversation);
 
+  // Mode buttons — toggle active, one-shot (reset after send)
+  document.querySelectorAll(".mode-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.mode;
+      if (activeMode === mode) {
+        activeMode = null;
+        btn.classList.remove("active");
+      } else {
+        activeMode = mode;
+        document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+    });
+  });
+
+  renderTopicWall();
   init();
 });

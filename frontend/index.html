@@ -36,12 +36,19 @@
         <div class="empty-symbol">◆</div>
         <p class="empty-prompt" id="empty-prompt">What are you wrestling with today?</p>
         <p class="empty-hint">A question, a half-baked idea, something that doesn't add up.</p>
+        <div class="topic-wall" id="topic-wall"></div>
       </div>
     </div>
   </main>
 
   <footer>
     <div class="compose">
+      <div class="mode-bar">
+        <button class="mode-btn" data-mode="steelman">steelman</button>
+        <button class="mode-btn" data-mode="devil's advocate">devil's advocate</button>
+        <button class="mode-btn" data-mode="first principles">first principles</button>
+        <button class="mode-btn" data-mode="simplify">simplify</button>
+      </div>
       <div class="compose-field">
         <textarea id="input" placeholder="What are you thinking about?" rows="1" autofocus></textarea>
       </div>

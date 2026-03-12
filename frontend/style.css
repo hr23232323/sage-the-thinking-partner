@@ -153,11 +153,17 @@ main {
 /* Empty state */
 .empty-state {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-height: 100%;
+  padding: 52px 0 48px;
 }
-.empty-inner { text-align: center; max-width: 360px; }
+.empty-inner {
+  text-align: center;
+  max-width: 580px;
+  margin: 0 auto;
+  width: 100%;
+}
 
 .empty-symbol {
   font-size: 14px;
@@ -186,6 +192,42 @@ main {
   font-size: 9.5px;
   color: var(--text-faint);
   letter-spacing: 0.04em;
+}
+
+/* Topic wall */
+.topic-wall {
+  margin-top: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.topic-chip {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
+  white-space: nowrap;
+  user-select: none;
+}
+.topic-chip:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+.topic-chip:active { transform: translateY(0); }
+.topic-chip.prominent {
+  font-size: 11.5px;
+  padding: 7px 16px;
+  border-color: var(--border-dark);
 }
 
 /* ── Messages ──────────────────────────────────────────── */
@@ -345,6 +387,36 @@ footer {
 }
 .compose { max-width: var(--max-w); margin: 0 auto; }
 
+/* Mode bar */
+.mode-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.mode-btn {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mode-btn:hover {
+  border-color: var(--border-dark);
+  color: var(--text-muted);
+}
+.mode-btn.active {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .compose-field {
   border-top: 1px solid var(--border);
   padding-top: 14px;
@@ -410,4 +482,7 @@ textarea::placeholder { color: var(--text-faint); font-style: italic; }
   main   { padding: 28px 16px 16px; }
   footer { padding: 14px 16px 20px; }
   select { max-width: 150px; }
+  .empty-state { padding: 32px 0 36px; }
+  .topic-chip { font-size: 10px; padding: 5px 11px; }
+  .topic-chip.prominent { font-size: 10.5px; }
 }
