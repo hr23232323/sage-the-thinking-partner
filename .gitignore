@@ -5,3 +5,8 @@ __pycache__/
 *.egg-info/
 dist/
 .DS_Store
+
+# Rust / Tauri
+target/
+src-tauri/gen/
+*.dmg

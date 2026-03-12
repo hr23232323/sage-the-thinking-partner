@@ -7,11 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="grain" aria-hidden="true"></div>
-
   <header>
     <div class="header-left">
       <span class="logo">sage</span>
@@ -27,8 +25,15 @@
         </span>
       </label>
       <button id="new-btn">new thread</button>
+      <button id="settings-btn" title="API key settings">⚙</button>
     </div>
   </header>
+
+  <div id="settings-bar" class="settings-bar hidden">
+    <label class="settings-label" for="api-key-input">openrouter key</label>
+    <input type="password" id="api-key-input" placeholder="sk-or-..." autocomplete="off" spellcheck="false" />
+    <button id="save-key-btn">save</button>
+  </div>
 
   <main id="conversation">
     <div class="empty-state" id="empty-state">
@@ -64,6 +69,6 @@
     </div>
   </footer>
 
-  <script type="module" src="/static/app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

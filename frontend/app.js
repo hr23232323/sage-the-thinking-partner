@@ -5,6 +5,51 @@ let messages = [];
 let isStreaming = false;
 let activeMode = null;
 
+// ── Tauri IPC bridge (no-op fallback for browser testing) ──────────────────
+const invoke = window.__TAURI__?.core?.invoke ?? (() => Promise.resolve(null));
+
+async function getApiKey() {
+  return invoke("get_api_key");
+}
+async function setApiKey(key) {
+  return invoke("set_api_key", { key });
+}
+
+// ── Models ────────────────────────────────────────────────────────────────────
+const MODELS = [
+  "anthropic/claude-sonnet-4-5:online",
+  "anthropic/claude-3.5-sonnet:online",
+  "openai/gpt-4o:online",
+  "google/gemini-2.0-flash-001:online",
+  "meta-llama/llama-3.3-70b-instruct:online",
+];
+const DEFAULT_MODEL = MODELS[0];
+
+// ── System prompt (ported from backend/llm.py) ────────────────────────────────
+const SYSTEM_PROMPT = `You are a thinking partner — like a sharp, well-read friend you can think out loud with.
+
+Match the user's energy exactly. Short question = short answer. Casual = casual. Only go long when they do.
+
+Never use bullet points, headers, or numbered lists unless the user explicitly asks for a breakdown. Write in plain prose, like you're texting a smart friend — not filing a report.
+
+When you go deep: push back, surface real tensions, bring in sources that matter. But earn it — don't perform depth.
+
+One follow-up question max, and only when it actually opens something up. Don't wrap up every response with a question.`;
+
+const MODE_PROMPTS = {
+  "steelman": "For this response, first identify and articulate the strongest possible version of the user's position — then engage with that, not a weaker version of it.",
+  "devil's advocate": "For this response, argue against what the user is saying. Find the real flaws, challenge the assumptions, take a hard opposing stance. Don't hedge.",
+  "first principles": "For this response, strip everything back to first principles. Refuse conventional framings. Challenge every assumption from the ground up.",
+  "simplify": "For this response, explain as simply and concretely as possible. No jargon, no abstractions. Make it land for someone completely new to this.",
+};
+
+function buildSystemPrompt(mode) {
+  let s = SYSTEM_PROMPT;
+  if (mode && MODE_PROMPTS[mode]) s += `\n\n${MODE_PROMPTS[mode]}`;
+  return s;
+}
+
+// ── Topics ────────────────────────────────────────────────────────────────────
 const TOPICS = [
   { label: "should I quit my job?",              prominent: true,  starter: "I'm thinking about quitting my job but I'm not sure if I'm being rational or just burnt out. Help me think through it." },
   { label: "am I actually productive?",          prominent: false, starter: "I feel busy all the time but I'm not sure I'm making real progress. How do I figure out if I'm actually productive or just active?" },
@@ -73,24 +118,52 @@ async function init() {
     }, 4000);
   }
 
-  const res = await fetch("/models");
-  const { models, default: defaultModel } = await res.json();
+  // Populate model dropdown
   const sel = document.getElementById("model-select");
-  for (const m of models) {
+  for (const m of MODELS) {
     const opt = document.createElement("option");
     opt.value = m;
     opt.textContent = m;
-    if (m === defaultModel) opt.selected = true;
+    if (m === DEFAULT_MODEL) opt.selected = true;
     sel.appendChild(opt);
   }
 
   const toggle = document.getElementById("web-search-toggle");
-  toggle.checked = defaultModel.includes(":online");
+  toggle.checked = DEFAULT_MODEL.includes(":online");
   toggle.addEventListener("change", syncModelSuffix);
   sel.addEventListener("change", () => {
     toggle.checked = sel.value.includes(":online");
   });
+
+  // API key — auto-show settings if not set
+  const key = await getApiKey();
+  if (!key) showSettingsBar();
 }
+
+// ── Settings bar ──────────────────────────────────────────────────────────────
+
+function showSettingsBar() {
+  const bar = document.getElementById("settings-bar");
+  bar.classList.remove("hidden");
+  document.getElementById("settings-btn").classList.add("active");
+  document.getElementById("api-key-input").focus();
+}
+
+function hideSettingsBar() {
+  document.getElementById("settings-bar").classList.add("hidden");
+  document.getElementById("settings-btn").classList.remove("active");
+}
+
+function toggleSettingsBar() {
+  const bar = document.getElementById("settings-bar");
+  if (bar.classList.contains("hidden")) {
+    showSettingsBar();
+  } else {
+    hideSettingsBar();
+  }
+}
+
+// ── Model helpers ──────────────────────────────────────────────────────────────
 
 function syncModelSuffix() {
   const sel = document.getElementById("model-select");
@@ -112,6 +185,13 @@ async function sendMessage() {
   const input = document.getElementById("input");
   const text = input.value.trim();
   if (!text) return;
+
+  const apiKey = await getApiKey();
+  if (!apiKey) {
+    showSettingsBar();
+    document.getElementById("api-key-input").focus();
+    return;
+  }
 
   input.value = "";
   autoResize(input);
@@ -137,10 +217,19 @@ async function sendMessage() {
   let hasError = false;
 
   try {
-    const response = await fetch("/chat", {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, model: getSelectedModel(), mode: activeMode }),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://thinking-buddy.local",
+        "X-Title": "sage",
+      },
+      body: JSON.stringify({
+        model: getSelectedModel(),
+        messages: [{ role: "system", content: buildSystemPrompt(activeMode) }, ...messages],
+        stream: true,
+      }),
     });
 
     if (!response.ok) {
@@ -165,8 +254,9 @@ async function sendMessage() {
         const payload = line.slice(6).trim();
         if (payload === "[DONE]") break;
         try {
-          const { delta, error } = JSON.parse(payload);
-          if (error) throw new Error(error);
+          const data = JSON.parse(payload);
+          if (data.error) throw new Error(data.error.message ?? JSON.stringify(data.error));
+          const delta = data.choices?.[0]?.delta?.content;
           if (delta) {
             if (firstChunk) {
               firstChunk = false;
@@ -174,7 +264,6 @@ async function sendMessage() {
               const assistantEl = appendMessage("assistant", "");
               contentEl = assistantEl.querySelector(".bubble-content");
               mdParser = smd.parser(smd.default_renderer(contentEl));
-              // Fade in each block element as smd adds it
               observer = new MutationObserver((mutations) => {
                 for (const m of mutations) {
                   for (const node of m.addedNodes) {
@@ -210,7 +299,6 @@ async function sendMessage() {
     contentEl.innerHTML = `<span class="error-msg">${escapeHtml(fullText)}</span>`;
   } finally {
     if (!hasError && fullText) messages.push({ role: "assistant", content: fullText });
-    // Reset mode after each send (one-shot)
     activeMode = null;
     document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
     setStreaming(false);
@@ -305,6 +393,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("send-btn").addEventListener("click", sendMessage);
   document.getElementById("new-btn").addEventListener("click", newConversation);
+  document.getElementById("settings-btn").addEventListener("click", toggleSettingsBar);
+
+  document.getElementById("save-key-btn").addEventListener("click", async () => {
+    const key = document.getElementById("api-key-input").value.trim();
+    if (key) {
+      await setApiKey(key);
+      hideSettingsBar();
+    }
+  });
+
+  // Allow Enter key in API key input to save
+  document.getElementById("api-key-input").addEventListener("keydown", async (e) => {
+    if (e.key === "Enter") {
+      const key = e.target.value.trim();
+      if (key) {
+        await setApiKey(key);
+        hideSettingsBar();
+      }
+    }
+  });
 
   // Mode buttons — toggle active, one-shot (reset after send)
   document.querySelectorAll(".mode-btn").forEach(btn => {

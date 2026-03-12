@@ -39,6 +39,8 @@ body {
   flex-direction: column;
   height: 100dvh;
   overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--border);
 }
 
 /* ── Header ────────────────────────────────────────────── */
@@ -141,6 +143,76 @@ select:hover, select:focus { border-color: var(--border-dark); color: var(--text
   transition: all 0.15s;
 }
 #new-btn:hover { border-color: var(--border-dark); color: var(--text-muted); }
+
+/* ── Settings btn ──────────────────────────────────────── */
+#settings-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+#settings-btn:hover { border-color: var(--border-dark); color: var(--text-muted); }
+#settings-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+
+/* ── Settings bar ──────────────────────────────────────── */
+.settings-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.settings-bar.hidden { display: none; }
+
+.settings-label {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.settings-bar input[type="password"] {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: var(--r);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.settings-bar input[type="password"]:focus { border-color: var(--accent); }
+
+#save-key-btn {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+#save-key-btn:hover { opacity: 0.85; }
 
 /* ── Conversation ──────────────────────────────────────── */
 main {
