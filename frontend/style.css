@@ -670,6 +670,28 @@ textarea::placeholder { color: var(--text-faint); font-style: italic; }
 .drawer-close svg { width: 13px; height: 13px; }
 .drawer-close:hover { color: var(--text); }
 
+.drawer-search {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.drawer-search input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  padding: 5px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.drawer-search input::placeholder { color: var(--text-faint); }
+.drawer-search input:focus { border-color: var(--border-dark); }
+/* hide the native search × in webkit */
+.drawer-search input::-webkit-search-cancel-button { display: none; }
+
 .history-list {
   flex: 1;
   overflow-y: auto;

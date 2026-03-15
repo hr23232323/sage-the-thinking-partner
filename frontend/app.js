@@ -333,9 +333,14 @@ function showHistoryPanel() {
   hideSettingsBar();
 
   const list = document.getElementById("history-list");
+  const searchInput = document.getElementById("history-search");
+  searchInput.value = "";
   list.innerHTML = "";
 
-  getConversations().then(convs => {
+  let allConvs = [];
+
+  function renderList(convs) {
+    list.innerHTML = "";
     if (!convs.length) {
       list.innerHTML = "<p class='history-empty'>no threads yet</p>";
       return;
@@ -370,7 +375,17 @@ function showHistoryPanel() {
       item.appendChild(del);
       list.appendChild(item);
     });
+  }
+
+  getConversations().then(convs => {
+    allConvs = convs;
+    renderList(allConvs);
   });
+
+  searchInput.oninput = () => {
+    const q = searchInput.value.trim().toLowerCase();
+    renderList(q ? allConvs.filter(c => (c.title || "").toLowerCase().includes(q)) : allConvs);
+  };
 
   document.getElementById("history-drawer").classList.add("open");
   document.getElementById("drawer-backdrop").classList.add("visible");
