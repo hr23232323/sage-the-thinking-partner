@@ -34,11 +34,33 @@ async function setPrefs(prefs) {
 // ── Models ────────────────────────────────────────────────────────────────────
 const MODELS = [
   "qwen/qwen3-32b:nitro",
-  "google/gemini-2.5-pro:online",
-  "anthropic/claude-sonnet-4-5:online",
-  "openai/gpt-4o:online",
+  "google/gemini-2.5-pro",
+  "anthropic/claude-sonnet-4-5",
+  "openai/gpt-4o",
 ];
 const DEFAULT_MODEL = MODELS[0];
+
+// Model used to execute the web search (cheap + fast, :online for grounding)
+const SEARCH_MODEL = "google/gemini-2.0-flash:online";
+
+// Tool definition passed to the main model
+const WEB_SEARCH_TOOL = {
+  type: "function",
+  function: {
+    name: "web_search",
+    description: "Search the web for current events, recent news, live data, or facts that may have changed since your training. Use this ONLY when the question genuinely requires up-to-date information. Do NOT use for conversational instructions like 'try again', 'rephrase', 'continue', or 'elaborate'.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "A precise, targeted search query derived from the full conversation context — not just the last message.",
+        },
+      },
+      required: ["query"],
+    },
+  },
+};
 
 // ── System prompt ────────────────────────────────────────────────────────────
 const SYSTEM_PROMPT = `You are a thinking partner — like a sharp, well-read friend you can think out loud with.
@@ -164,26 +186,19 @@ async function init() {
 
   // Restore saved model
   if (prefs.model) {
-    const base = prefs.model.replace(/:online$/, "");
-    const match = Array.from(sel.options).find(o => o.value.replace(/:online$/, "") === base);
+    const match = Array.from(sel.options).find(o => o.value === prefs.model);
     if (match) sel.value = match.value;
   }
 
   const toggle = document.getElementById("web-search-toggle");
-  // Restore saved web pref (fall back to model suffix)
-  toggle.checked = prefs.web !== undefined ? prefs.web : sel.value.includes(":online");
-  syncModelSuffix();
+  toggle.checked = prefs.web ?? false;
 
   function savePrefs() {
-    const currentModel = getSelectedModel().replace(/:online$/, "");
-    setPrefs({ model: currentModel, web: toggle.checked, theme: document.documentElement.getAttribute("data-theme") || "light" });
+    setPrefs({ model: getSelectedModel(), web: toggle.checked, theme: document.documentElement.getAttribute("data-theme") || "light" });
   }
 
-  toggle.addEventListener("change", () => { syncModelSuffix(); savePrefs(); });
-  sel.addEventListener("change", () => {
-    toggle.checked = sel.value.includes(":online");
-    savePrefs();
-  });
+  toggle.addEventListener("change", savePrefs);
+  sel.addEventListener("change", savePrefs);
 
   // Wire up history button
   document.getElementById("history-btn").addEventListener("click", showHistoryPanel);
@@ -240,15 +255,6 @@ function toggleSettingsBar() {
 }
 
 // ── Model helpers ──────────────────────────────────────────────────────────────
-
-function syncModelSuffix() {
-  const sel = document.getElementById("model-select");
-  const toggle = document.getElementById("web-search-toggle");
-  let model = sel.value.replace(/:online$/, "");
-  if (toggle.checked) model += ":online";
-  sel.options[sel.selectedIndex].value = model;
-  sel.options[sel.selectedIndex].textContent = model;
-}
 
 function getSelectedModel() {
   return document.getElementById("model-select").value;
@@ -449,6 +455,109 @@ function exportConversation() {
   URL.revokeObjectURL(url);
 }
 
+// ── OpenRouter helpers ────────────────────────────────────────────────────────
+
+async function fetchOpenRouter(apiKey, body) {
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://thinking-buddy.local",
+      "X-Title": "sage",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+  return res;
+}
+
+// Streams one OpenRouter response. Returns { fullText, toolCall }.
+// If the model calls a tool, fullText is "" and toolCall is populated.
+// thinkingEl is removed from DOM on the first content chunk.
+async function doStream(response, thinkingEl) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let fullText = "";
+  let contentEl = null;
+  let mdParser = null;
+  let observer = null;
+  let firstChunk = true;
+  let pendingToolCall = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop();
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (payload === "[DONE]") break;
+      try {
+        const data = JSON.parse(payload);
+        if (data.error) throw new Error(data.error.message ?? JSON.stringify(data.error));
+
+        // Accumulate tool call deltas
+        const tcDelta = data.choices?.[0]?.delta?.tool_calls;
+        if (tcDelta) {
+          for (const tc of tcDelta) {
+            if (!pendingToolCall) pendingToolCall = { id: "", name: "", args: "" };
+            if (tc.id) pendingToolCall.id = tc.id;
+            if (tc.function?.name) pendingToolCall.name += tc.function.name;
+            if (tc.function?.arguments) pendingToolCall.args += tc.function.arguments;
+          }
+        }
+
+        // Content chunks → render to bubble
+        const delta = data.choices?.[0]?.delta?.content;
+        if (delta) {
+          if (firstChunk) {
+            firstChunk = false;
+            thinkingEl.remove();
+            const assistantEl = appendMessage("assistant", "");
+            contentEl = assistantEl.querySelector(".bubble-content");
+            mdParser = smd.parser(smd.default_renderer(contentEl));
+            observer = new MutationObserver((mutations) => {
+              for (const m of mutations)
+                for (const node of m.addedNodes)
+                  if (node.nodeType === Node.ELEMENT_NODE) node.classList.add("chunk-in");
+            });
+            observer.observe(contentEl, { childList: true });
+          }
+          fullText += delta;
+          smd.parser_write(mdParser, delta);
+          scrollToBottom();
+        }
+      } catch (e) {
+        if (e.message !== "undefined") throw e;
+      }
+    }
+  }
+
+  if (observer) observer.disconnect();
+  if (mdParser) smd.parser_end(mdParser);
+
+  return { fullText, toolCall: pendingToolCall?.name ? pendingToolCall : null };
+}
+
+// Calls a cheap :online model with the pointed query; returns plain text results.
+async function executeWebSearch(apiKey, query) {
+  const res = await fetchOpenRouter(apiKey, {
+    model: SEARCH_MODEL,
+    messages: [{ role: "user", content: query }],
+    stream: false,
+    max_tokens: 1000,
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message ?? JSON.stringify(data.error));
+  return data.choices?.[0]?.message?.content ?? "No results found.";
+}
+
 // ── Send ──────────────────────────────────────────────────────────────────────
 
 async function sendMessage() {
@@ -467,7 +576,7 @@ async function sendMessage() {
   input.value = "";
   autoResize(input);
 
-  const conversation = document.getElementById("conversation");
+  const conversationEl = document.getElementById("conversation");
   const empty = document.getElementById("empty-state");
   if (empty) empty.remove();
 
@@ -475,110 +584,80 @@ async function sendMessage() {
   appendMessage("user", text);
 
   const thinkingEl = createThinkingIndicator();
-  conversation.appendChild(thinkingEl);
+  conversationEl.appendChild(thinkingEl);
   scrollToBottom();
-
   setStreaming(true);
 
   let fullText = "";
-  let contentEl = null;
-  let mdParser = null;
-  let observer = null;
-  let firstChunk = true;
   let hasError = false;
+  let errorContentEl = null;
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://thinking-buddy.local",
-        "X-Title": "sage",
-      },
-      body: JSON.stringify({
-        model: getSelectedModel(),
-        messages: [{ role: "system", content: buildSystemPrompt(activeMode) }, ...messages],
-        stream: true,
-      }),
+    const webEnabled = document.getElementById("web-search-toggle").checked;
+    const tools = webEnabled ? [WEB_SEARCH_TOOL] : undefined;
+    const systemMessages = [{ role: "system", content: buildSystemPrompt(activeMode) }];
+
+    // First call — main model, may return a tool call
+    const res1 = await fetchOpenRouter(apiKey, {
+      model: getSelectedModel(),
+      messages: [...systemMessages, ...messages],
+      stream: true,
+      ...(tools && { tools, tool_choice: "auto" }),
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`HTTP ${response.status}: ${err}`);
-    }
+    const { fullText: text1, toolCall } = await doStream(res1, thinkingEl);
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
+    if (toolCall) {
+      // Model wants to search — update indicator (still in DOM)
+      thinkingEl.classList.add("is-searching");
+      const labelEl = thinkingEl.querySelector(".thinking-label");
+      if (labelEl) labelEl.textContent = "searching";
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const payload = line.slice(6).trim();
-        if (payload === "[DONE]") break;
-        try {
-          const data = JSON.parse(payload);
-          if (data.error) throw new Error(data.error.message ?? JSON.stringify(data.error));
-          const delta = data.choices?.[0]?.delta?.content;
-          if (delta) {
-            if (firstChunk) {
-              firstChunk = false;
-              thinkingEl.remove();
-              const assistantEl = appendMessage("assistant", "");
-              contentEl = assistantEl.querySelector(".bubble-content");
-              mdParser = smd.parser(smd.default_renderer(contentEl));
-              observer = new MutationObserver((mutations) => {
-                for (const m of mutations) {
-                  for (const node of m.addedNodes) {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                      node.classList.add("chunk-in");
-                    }
-                  }
-                }
-              });
-              observer.observe(contentEl, { childList: true });
-            }
-            fullText += delta;
-            smd.parser_write(mdParser, delta);
-            scrollToBottom();
-          }
-        } catch (e) {
-          if (e.message !== "undefined") throw e;
-        }
+      let searchResult;
+      try {
+        const query = JSON.parse(toolCall.args).query;
+        searchResult = await executeWebSearch(apiKey, query);
+      } catch (e) {
+        searchResult = `Search failed: ${e.message}. Answer from your training data only.`;
       }
-    }
 
-    if (observer) { observer.disconnect(); observer = null; }
-    if (mdParser) smd.parser_end(mdParser);
+      // Tool exchange — ephemeral, not saved to messages[]
+      const toolExchange = [
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: [{ id: toolCall.id, type: "function", function: { name: toolCall.name, arguments: toolCall.args } }],
+        },
+        { role: "tool", tool_call_id: toolCall.id, content: searchResult },
+      ];
+
+      // Second call — main model gets search results, streams final answer
+      const res2 = await fetchOpenRouter(apiKey, {
+        model: getSelectedModel(),
+        messages: [...systemMessages, ...messages, ...toolExchange],
+        stream: true,
+        ...(tools && { tools, tool_choice: "none" }),
+      });
+
+      const { fullText: text2 } = await doStream(res2, thinkingEl);
+      fullText = text2;
+    } else {
+      fullText = text1;
+    }
   } catch (err) {
     hasError = true;
-    if (observer) { observer.disconnect(); observer = null; }
-    thinkingEl.remove();
-    if (!contentEl) {
-      const el = appendMessage("assistant", "");
-      contentEl = el.querySelector(".bubble-content");
-    }
+    if (thinkingEl.parentNode) thinkingEl.remove();
+    const el = appendMessage("assistant", "");
+    errorContentEl = el.querySelector(".bubble-content");
     fullText = `Error: ${err.message}`;
-    contentEl.innerHTML = `<span class="error-msg">${escapeHtml(fullText)}</span>`;
+    errorContentEl.innerHTML = `<span class="error-msg">${escapeHtml(fullText)}</span>`;
   } finally {
     if (!hasError && fullText) messages.push({ role: "assistant", content: fullText });
     activeMode = null;
     document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
     setStreaming(false);
     scrollToBottom();
-    
-    // Save conversation after completion
-    if (!hasError && messages.length > 0) {
-      saveCurrentConversation();
-    }
+    if (!hasError && messages.length > 0) saveCurrentConversation();
     updateCopyBtn();
   }
 }

@@ -468,6 +468,11 @@ main {
   text-transform: uppercase;
   color: var(--accent);
   opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.thinking.is-searching .thinking-label {
+  opacity: 1;
+  letter-spacing: 0.22em;
 }
 .thinking-dots { display: flex; gap: 4px; align-items: center; }
 .thinking-dots span {
