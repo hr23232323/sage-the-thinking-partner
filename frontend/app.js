@@ -21,9 +21,6 @@ async function getConversations() {
 async function saveConversation(conversation) {
   return invoke("save_conversation", { conversation });
 }
-async function deleteConversation(id) {
-  return invoke("delete_conversation", { id });
-}
 
 // ── Models ────────────────────────────────────────────────────────────────────
 const MODELS = [
@@ -34,7 +31,7 @@ const MODELS = [
 ];
 const DEFAULT_MODEL = MODELS[0];
 
-// ── System prompt (ported from backend/llm.py) ────────────────────────────────
+// ── System prompt ────────────────────────────────────────────────────────────
 const SYSTEM_PROMPT = `You are a thinking partner — like a sharp, well-read friend you can think out loud with.
 
 Match the user's energy exactly. Short question = short answer. Casual = casual. Only go long when they do.
@@ -501,22 +498,6 @@ function setStreaming(val) {
   isStreaming = val;
   document.getElementById("send-btn").disabled = val;
   document.getElementById("input").disabled = val;
-}
-
-function newConversation() {
-  if (isStreaming) return;
-  messages = [];
-  document.getElementById("conversation").innerHTML = `
-    <div class="empty-state" id="empty-state">
-      <div class="empty-inner">
-        <div class="empty-symbol">◆</div>
-        <p class="empty-prompt" id="empty-prompt">What are you wrestling with today?</p>
-        <p class="empty-hint">A question, a half-baked idea, something that doesn't add up.</p>
-        <div class="topic-wall" id="topic-wall"></div>
-      </div>
-    </div>
-  `;
-  renderTopicWall();
 }
 
 // ── Textarea auto-resize + keyboard ──────────────────────────────────────────
