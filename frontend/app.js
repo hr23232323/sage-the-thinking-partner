@@ -24,6 +24,12 @@ async function saveConversation(conversation) {
 async function deleteConversation(id) {
   return invoke("delete_conversation", { id });
 }
+async function getPrefs() {
+  return invoke("get_prefs") ?? {};
+}
+async function setPrefs(prefs) {
+  return invoke("set_prefs", { prefs });
+}
 
 // ── Models ────────────────────────────────────────────────────────────────────
 const MODELS = [
@@ -140,6 +146,12 @@ async function init() {
     }, 4000);
   }
 
+  // Load saved prefs
+  const prefs = await getPrefs();
+
+  // Apply theme early
+  if (prefs.theme === "dark") document.documentElement.setAttribute("data-theme", "dark");
+
   // Populate model dropdown
   const sel = document.getElementById("model-select");
   for (const m of MODELS) {
@@ -150,11 +162,27 @@ async function init() {
     sel.appendChild(opt);
   }
 
+  // Restore saved model
+  if (prefs.model) {
+    const base = prefs.model.replace(/:online$/, "");
+    const match = Array.from(sel.options).find(o => o.value.replace(/:online$/, "") === base);
+    if (match) sel.value = match.value;
+  }
+
   const toggle = document.getElementById("web-search-toggle");
-  toggle.checked = DEFAULT_MODEL.includes(":online");
-  toggle.addEventListener("change", syncModelSuffix);
+  // Restore saved web pref (fall back to model suffix)
+  toggle.checked = prefs.web !== undefined ? prefs.web : sel.value.includes(":online");
+  syncModelSuffix();
+
+  function savePrefs() {
+    const currentModel = getSelectedModel().replace(/:online$/, "");
+    setPrefs({ model: currentModel, web: toggle.checked, theme: document.documentElement.getAttribute("data-theme") || "light" });
+  }
+
+  toggle.addEventListener("change", () => { syncModelSuffix(); savePrefs(); });
   sel.addEventListener("change", () => {
     toggle.checked = sel.value.includes(":online");
+    savePrefs();
   });
 
   // Wire up history button

@@ -11,6 +11,13 @@ const PADDING: f64 = 8.0;
 const MAX_CONVERSATIONS: usize = 20;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+struct Prefs {
+    model: Option<String>,
+    web: Option<bool>,
+    theme: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Conversation {
     id: String,
     title: String,
@@ -81,6 +88,26 @@ fn save_conversation(app: tauri::AppHandle, conversation: Conversation) {
 }
 
 #[tauri::command]
+fn get_prefs(app: tauri::AppHandle) -> Prefs {
+    if let Ok(store) = app.store("store.json") {
+        if let Some(v) = store.get("prefs") {
+            if let Ok(prefs) = serde_json::from_value::<Prefs>(v.clone()) {
+                return prefs;
+            }
+        }
+    }
+    Prefs { model: None, web: None, theme: None }
+}
+
+#[tauri::command]
+fn set_prefs(app: tauri::AppHandle, prefs: Prefs) {
+    if let Ok(store) = app.store("store.json") {
+        store.set("prefs", serde_json::to_value(&prefs).unwrap());
+        let _ = store.save();
+    }
+}
+
+#[tauri::command]
 fn delete_conversation(app: tauri::AppHandle, id: String) {
     if let Ok(store) = app.store("store.json") {
         let mut conversations: Vec<Conversation> = if let Some(v) = store.get("conversations") {
@@ -140,6 +167,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_api_key,
             set_api_key,
+            get_prefs,
+            set_prefs,
             get_conversations,
             save_conversation,
             delete_conversation
