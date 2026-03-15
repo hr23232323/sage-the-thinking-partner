@@ -472,7 +472,7 @@ async function sendMessage() {
 
   function onDelta(delta) {
     if (!contentEl) {
-      if (thinkingEl.parentNode) thinkingEl.remove();
+      if (thinkingEl.parentNode) collapseThinking(thinkingEl, () => {});
       const el = appendMessage("assistant", "");
       contentEl = el.querySelector(".bubble-content");
       mdParser = smd.parser(smd.default_renderer(contentEl));
@@ -487,10 +487,12 @@ async function sendMessage() {
     scrollToBottom();
   }
 
-  function onSearching() {
-    thinkingEl.classList.add("is-searching");
-    const labelEl = thinkingEl.querySelector(".thinking-label");
-    if (labelEl) labelEl.textContent = "searching";
+  function onSearching(query) {
+    addThinkingStep(thinkingEl, "search", query);
+  }
+
+  function onSynthesizing() {
+    addThinkingStep(thinkingEl, "synthesize");
   }
 
   try {
@@ -502,10 +504,11 @@ async function sendMessage() {
       webEnabled: document.getElementById("web-search-toggle").checked,
       onDelta,
       onSearching,
+      onSynthesizing,
     }));
   } catch (err) {
     hasError = true;
-    if (thinkingEl.parentNode) thinkingEl.remove();
+    if (thinkingEl.parentNode) { thinkingEl.style.transition = "none"; thinkingEl.remove(); }
     const el = appendMessage("assistant", "");
     el.querySelector(".bubble-content").innerHTML =
       `<span class="error-msg">${escapeHtml("Error: " + err.message)}</span>`;
@@ -549,10 +552,49 @@ function createThinkingIndicator() {
   const el = document.createElement("div");
   el.className = "thinking";
   el.innerHTML = `
-    <span class="thinking-label">sage</span>
-    <div class="thinking-dots"><span></span><span></span><span></span></div>
+    <div class="thinking-header">
+      <span class="thinking-label">sage</span>
+      <div class="thinking-dots"><span></span><span></span><span></span></div>
+    </div>
+    <div class="thinking-log"></div>
   `;
   return el;
+}
+
+function addThinkingStep(thinkingEl, type, text) {
+  const log = thinkingEl.querySelector(".thinking-log");
+  if (!log) return;
+  const step = document.createElement("div");
+  step.className = "thinking-step";
+  if (type === "search") {
+    step.innerHTML = `<span class="thinking-step-arrow">↳</span><span class="thinking-step-text">searching <em>"${escapeHtml(text)}"</em></span>`;
+  } else {
+    step.innerHTML = `<span class="thinking-step-arrow">↳</span><span class="thinking-step-text">synthesizing…</span>`;
+  }
+  log.appendChild(step);
+  scrollToBottom();
+}
+
+function collapseThinking(thinkingEl, onDone) {
+  const h = thinkingEl.getBoundingClientRect().height;
+  thinkingEl.style.height = h + "px";
+  thinkingEl.style.overflow = "hidden";
+  thinkingEl.style.transition = "height 0.28s ease, opacity 0.2s ease, margin-bottom 0.28s ease";
+  requestAnimationFrame(() => {
+    thinkingEl.style.height = "0";
+    thinkingEl.style.opacity = "0";
+    thinkingEl.style.marginBottom = "0";
+  });
+  let done = false;
+  const cleanup = () => { if (done) return; done = true; thinkingEl.remove(); onDone(); };
+  thinkingEl.addEventListener("transitionend", function handler(e) {
+    if (e.propertyName === "height") {
+      thinkingEl.removeEventListener("transitionend", handler);
+      cleanup();
+    }
+  });
+  // Fallback in case transitionend doesn't fire (e.g. reduced motion)
+  setTimeout(cleanup, 400);
 }
 
 function escapeHtml(str) {

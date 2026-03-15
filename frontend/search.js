@@ -101,8 +101,9 @@ export async function parseStream(reader, onDelta) {
  * @param {string}   opts.systemPrompt
  * @param {boolean}  opts.webEnabled     whether to offer the web_search tool
  * @param {function} opts.onDelta        called with each streamed text chunk
- * @param {function} [opts.onSearching]  called when a search is triggered
- * @param {function} [opts._fetch]       injectable fetch (defaults to global fetch)
+ * @param {function} [opts.onSearching]    called with (query) when a search is triggered
+ * @param {function} [opts.onSynthesizing] called after search result arrives, before final call
+ * @param {function} [opts._fetch]         injectable fetch (defaults to global fetch)
  * @returns {{ fullText: string, usedSearch: boolean }}
  */
 export async function orchestrateMessage({
@@ -113,6 +114,7 @@ export async function orchestrateMessage({
   webEnabled,
   onDelta,
   onSearching,
+  onSynthesizing,
   _fetch = fetch,
 }) {
   console.log("[sage] orchestrateMessage — model:", model, "| webEnabled:", webEnabled);
@@ -152,7 +154,6 @@ export async function orchestrateMessage({
   if (!toolCall) return { fullText, usedSearch: false };
 
   // ── Model triggered a search ───────────────────────────────────────────────
-  onSearching?.();
   let query;
   try {
     query = JSON.parse(toolCall.args).query;
@@ -160,6 +161,7 @@ export async function orchestrateMessage({
     console.warn("[sage] tool call args parse failed, skipping search:", toolCall.args);
     return { fullText, usedSearch: false };
   }
+  onSearching?.(query);
   console.log("[sage] searching with model:", searchModel(model), "| query:", query);
 
   let searchResult;
@@ -177,6 +179,8 @@ export async function orchestrateMessage({
     console.error("[sage] search failed:", e.message);
     searchResult = `Search failed: ${e.message}. Answer from training data only.`;
   }
+
+  onSynthesizing?.();
 
   const toolExchange = [
     {
