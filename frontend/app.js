@@ -4,6 +4,7 @@ import * as smd from "https://cdn.jsdelivr.net/npm/streaming-markdown/smd.min.js
 let messages = [];
 let isStreaming = false;
 let activeMode = null;
+let currentConversationId = null;
 
 // ── Tauri IPC bridge (no-op fallback for browser testing) ──────────────────
 const invoke = window.__TAURI__?.core?.invoke ?? (() => Promise.resolve(null));
@@ -13,6 +14,15 @@ async function getApiKey() {
 }
 async function setApiKey(key) {
   return invoke("set_api_key", { key });
+}
+async function getConversations() {
+  return invoke("get_conversations") ?? [];
+}
+async function saveConversation(conversation) {
+  return invoke("save_conversation", { conversation });
+}
+async function deleteConversation(id) {
+  return invoke("delete_conversation", { id });
 }
 
 // ── Models ────────────────────────────────────────────────────────────────────
@@ -87,18 +97,31 @@ function renderTopicWall() {
   const wall = document.getElementById("topic-wall");
   if (!wall) return;
   wall.innerHTML = "";
-  TOPICS.forEach(topic => {
-    const chip = document.createElement("button");
-    chip.className = "topic-chip" + (topic.prominent ? " prominent" : "");
-    chip.textContent = topic.label;
-    chip.addEventListener("click", () => {
-      const input = document.getElementById("input");
-      input.value = topic.starter;
-      autoResize(input);
-      input.focus();
-      input.setSelectionRange(input.value.length, input.value.length);
+
+  const half = Math.ceil(TOPICS.length / 2);
+  const rows = [TOPICS.slice(0, half), TOPICS.slice(half)];
+
+  rows.forEach((rowTopics, i) => {
+    const track = document.createElement("div");
+    track.className = "topic-track" + (i === 1 ? " slow" : "");
+
+    [0, 1].forEach(() => {
+      rowTopics.forEach(topic => {
+        const chip = document.createElement("button");
+        chip.className = "topic-chip" + (topic.prominent ? " prominent" : "");
+        chip.textContent = topic.label;
+        chip.addEventListener("click", () => {
+          const input = document.getElementById("input");
+          input.value = topic.starter;
+          autoResize(input);
+          input.focus();
+          input.setSelectionRange(input.value.length, input.value.length);
+        });
+        track.appendChild(chip);
+      });
     });
-    wall.appendChild(chip);
+
+    wall.appendChild(track);
   });
 }
 
@@ -134,32 +157,41 @@ async function init() {
     toggle.checked = sel.value.includes(":online");
   });
 
+  // Wire up history button
+  document.getElementById("history-btn").addEventListener("click", showHistoryPanel);
+
   // API key — auto-show settings if not set
   const key = await getApiKey();
   if (!key) showSettingsBar();
+  
+  // Load last conversation if exists
+  const convs = await getConversations();
+  if (convs.length > 0) {
+    loadConversation(convs[0]);
+  }
 }
 
-// ── Settings bar ──────────────────────────────────────────────────────────────
+// ── Settings panel ────────────────────────────────────────────────────────────
 
-function showSettingsBar() {
-  const bar = document.getElementById("settings-bar");
-  bar.classList.remove("hidden");
+async function showSettingsBar() {
+  hideHistoryPanel();
+  document.getElementById("settings-bar").classList.add("open");
   document.getElementById("settings-btn").classList.add("active");
-  document.getElementById("api-key-input").focus();
+  const input = document.getElementById("api-key-input");
+  const key = await getApiKey();
+  if (key) input.value = key;
+  input.focus();
 }
 
 function hideSettingsBar() {
-  document.getElementById("settings-bar").classList.add("hidden");
+  document.getElementById("settings-bar").classList.remove("open");
   document.getElementById("settings-btn").classList.remove("active");
 }
 
 function toggleSettingsBar() {
   const bar = document.getElementById("settings-bar");
-  if (bar.classList.contains("hidden")) {
-    showSettingsBar();
-  } else {
-    hideSettingsBar();
-  }
+  if (bar.classList.contains("open")) hideSettingsBar();
+  else showSettingsBar();
 }
 
 // ── Model helpers ──────────────────────────────────────────────────────────────
@@ -175,6 +207,115 @@ function syncModelSuffix() {
 
 function getSelectedModel() {
   return document.getElementById("model-select").value;
+}
+
+// ── Conversation management ─────────────────────────────────────────────────
+
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function getConversationTitle(msgs) {
+  if (!msgs.length) return "New conversation";
+  const firstUser = msgs.find(m => m.role === "user");
+  if (firstUser) {
+    const title = firstUser.content.slice(0, 50);
+    return title + (firstUser.content.length > 50 ? "..." : "");
+  }
+  return "New conversation";
+}
+
+async function saveCurrentConversation() {
+  if (!messages.length) return;
+  
+  const conversation = {
+    id: currentConversationId || generateId(),
+    title: getConversationTitle(messages),
+    messages: messages,
+    mode: activeMode,
+    created_at: Date.now(),
+  };
+  
+  currentConversationId = conversation.id;
+  await saveConversation(conversation);
+}
+
+async function loadConversation(conversation) {
+  currentConversationId = conversation.id;
+  messages = conversation.messages || [];
+  activeMode = conversation.mode || null;
+  
+  const conversationEl = document.getElementById("conversation");
+  conversationEl.innerHTML = "";
+  
+  if (messages.length === 0) {
+    renderTopicWall();
+  } else {
+    for (const msg of messages) {
+      appendMessage(msg.role, msg.content);
+    }
+  }
+  
+  // Update mode buttons
+  document.querySelectorAll(".mode-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.mode === activeMode);
+  });
+  
+  hideHistoryPanel();
+}
+
+function startNewConversation() {
+  if (isStreaming) return;
+  currentConversationId = null;
+  messages = [];
+  activeMode = null;
+
+  document.getElementById("conversation").innerHTML = `
+    <div class="empty-state" id="empty-state">
+      <div class="empty-inner">
+        <div class="empty-symbol">◆</div>
+        <p class="empty-prompt" id="empty-prompt">What are you wrestling with today?</p>
+        <p class="empty-hint">A question, a half-baked idea, something that doesn't add up.</p>
+        <div class="topic-wall" id="topic-wall"></div>
+      </div>
+    </div>
+  `;
+  renderTopicWall();
+  document.querySelectorAll(".mode-btn").forEach(btn => btn.classList.remove("active"));
+}
+
+function showHistoryPanel() {
+  hideSettingsBar();
+
+  const list = document.getElementById("history-list");
+  list.innerHTML = "";
+
+  getConversations().then(convs => {
+    if (!convs.length) {
+      list.innerHTML = "<p class='history-empty'>no threads yet</p>";
+      return;
+    }
+    convs.forEach(conv => {
+      const item = document.createElement("button");
+      item.className = "history-item";
+      item.innerHTML = `
+        <span class="history-title">${escapeHtml(conv.title || "Untitled")}</span>
+        <span class="history-date">${new Date(conv.created_at).toLocaleDateString()}</span>
+      `;
+      item.addEventListener("click", () => loadConversation(conv));
+      list.appendChild(item);
+    });
+  });
+
+  document.getElementById("history-drawer").classList.add("open");
+  document.getElementById("drawer-backdrop").classList.add("visible");
+  document.getElementById("history-btn").classList.add("active");
+}
+
+function hideHistoryPanel() {
+  document.getElementById("history-drawer").classList.remove("open");
+  document.getElementById("drawer-backdrop").classList.remove("visible");
+  document.getElementById("history-btn").classList.remove("active");
 }
 
 // ── Send ──────────────────────────────────────────────────────────────────────
@@ -302,6 +443,11 @@ async function sendMessage() {
     document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
     setStreaming(false);
     scrollToBottom();
+    
+    // Save conversation after completion
+    if (!hasError && messages.length > 0) {
+      saveCurrentConversation();
+    }
   }
 }
 
@@ -391,8 +537,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("send-btn").addEventListener("click", sendMessage);
-  document.getElementById("new-btn").addEventListener("click", newConversation);
+  document.getElementById("new-btn").addEventListener("click", startNewConversation);
   document.getElementById("settings-btn").addEventListener("click", toggleSettingsBar);
+  document.getElementById("close-history").addEventListener("click", hideHistoryPanel);
+  document.getElementById("drawer-backdrop").addEventListener("click", hideHistoryPanel);
 
   document.getElementById("save-key-btn").addEventListener("click", async () => {
     const key = document.getElementById("api-key-input").value.trim();
