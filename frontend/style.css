@@ -26,6 +26,23 @@
   --r: 6px;
 }
 
+/* ── Dark theme ────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:          #1a1916;
+  --surface:     #232220;
+  --border:      #2e2c29;
+  --border-dark: #46433e;
+
+  --text:        #e8e4dd;
+  --text-muted:  #9e9890;
+  --text-faint:  #4e4b47;
+
+  --accent:      #c4845a;
+  --accent-bg:   #2d2118;
+
+  --error:       #e05c4b;
+}
+
 /* ── Base ──────────────────────────────────────────────── */
 html, body { height: 100%; }
 

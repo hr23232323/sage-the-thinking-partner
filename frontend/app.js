@@ -150,7 +150,7 @@ async function init() {
   const prefs = await getPrefs();
 
   // Apply theme early
-  if (prefs.theme === "dark") document.documentElement.setAttribute("data-theme", "dark");
+  applyTheme(prefs.theme || "light");
 
   // Populate model dropdown
   const sel = document.getElementById("model-select");
@@ -197,6 +197,23 @@ async function init() {
   if (convs.length > 0) {
     loadConversation(convs[0]);
   }
+}
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+
+function applyTheme(theme) {
+  const isDark = theme === "dark";
+  document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+  document.getElementById("theme-icon-moon").style.display = isDark ? "none" : "";
+  document.getElementById("theme-icon-sun").style.display = isDark ? "" : "none";
+}
+
+async function toggleTheme() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const next = isDark ? "light" : "dark";
+  applyTheme(next);
+  const prefs = await getPrefs();
+  setPrefs({ ...prefs, theme: next });
 }
 
 // ── Settings panel ────────────────────────────────────────────────────────────
@@ -570,6 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("send-btn").addEventListener("click", sendMessage);
   document.getElementById("new-btn").addEventListener("click", startNewConversation);
+  document.getElementById("theme-btn").addEventListener("click", toggleTheme);
   document.getElementById("settings-btn").addEventListener("click", toggleSettingsBar);
   document.getElementById("close-history").addEventListener("click", hideHistoryPanel);
   document.getElementById("drawer-backdrop").addEventListener("click", hideHistoryPanel);
