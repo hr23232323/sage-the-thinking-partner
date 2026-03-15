@@ -11,7 +11,12 @@ sage lives in your menu bar. Click the icon, think out loud, get a sharp respons
 
 It's not trying to replace your LLM subscription or your notes app. It's a scratchpad for thinking — for the half-formed idea, the question you can't stop turning over, the argument you want to pressure-test before you say it out loud.
 
-<!-- Add a screenshot here: docs/screenshot.png -->
+<table>
+  <tr>
+    <td align="center"><img src="docs/entrypoint.png" width="300" alt="sage empty state — topic starters scroll across the screen" /><br/><sub>Start from a prompt or jump straight in</sub></td>
+    <td align="center"><img src="docs/chat.png" width="300" alt="sage mid-conversation with thinking modes" /><br/><sub>Switch modes mid-conversation</sub></td>
+  </tr>
+</table>
 
 ---
 
