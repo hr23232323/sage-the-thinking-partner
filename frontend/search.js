@@ -119,7 +119,7 @@ export async function orchestrateMessage({
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://thinking-buddy.local",
+        "HTTP-Referer": "https://github.com/hr23232323/sage-the-thinking-partner",
         "X-Title": "sage",
       },
       body: JSON.stringify(body),
