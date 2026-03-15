@@ -574,6 +574,47 @@ textarea::placeholder { color: var(--text-faint); font-style: italic; }
   letter-spacing: 0.03em;
 }
 
+/* ── Copy chat button ──────────────────────────────────── */
+.copy-btn {
+  display: none; /* shown via JS when messages exist */
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r);
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.copy-btn svg { width: 11px; height: 11px; flex-shrink: 0; }
+.copy-btn .copy-check { display: none; }
+.copy-btn:hover {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+/* Copied feedback — accent ink fill + checkmark */
+.copy-btn.copied {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  transform: scale(1.04);
+}
+.copy-btn.copied .copy-icon { display: none; }
+.copy-btn.copied .copy-check { display: block; }
+.copy-btn.copied .copy-label { display: inline; }
+
+@keyframes copy-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.08); }
+  100% { transform: scale(1.04); }
+}
+.copy-btn.copied { animation: copy-pop 0.18s ease forwards; }
+
 #send-btn {
   width: 28px;
   height: 28px;

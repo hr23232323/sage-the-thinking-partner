@@ -307,6 +307,7 @@ async function loadConversation(conversation) {
   });
   
   hideHistoryPanel();
+  updateCopyBtn();
 }
 
 function startNewConversation() {
@@ -327,6 +328,7 @@ function startNewConversation() {
   `;
   renderTopicWall();
   document.querySelectorAll(".mode-btn").forEach(btn => btn.classList.remove("active"));
+  updateCopyBtn();
 }
 
 function showHistoryPanel() {
@@ -396,6 +398,37 @@ function hideHistoryPanel() {
   document.getElementById("history-drawer").classList.remove("open");
   document.getElementById("drawer-backdrop").classList.remove("visible");
   document.getElementById("history-btn").classList.remove("active");
+}
+
+// ── Copy chat ─────────────────────────────────────────────────────────────────
+
+function updateCopyBtn() {
+  const btn = document.getElementById("copy-btn");
+  btn.style.display = messages.length ? "flex" : "none";
+}
+
+async function copyChat() {
+  if (!messages.length) return;
+  const text = messages.map(m =>
+    `${m.role === "user" ? "You" : "sage"}:\n${m.content}`
+  ).join("\n\n---\n\n");
+
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // fallback for environments where clipboard API is restricted
+    const ta = Object.assign(document.createElement("textarea"), {
+      value: text, style: "position:fixed;opacity:0"
+    });
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+
+  const btn = document.getElementById("copy-btn");
+  btn.classList.add("copied");
+  setTimeout(() => btn.classList.remove("copied"), 1500);
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
@@ -546,6 +579,7 @@ async function sendMessage() {
     if (!hasError && messages.length > 0) {
       saveCurrentConversation();
     }
+    updateCopyBtn();
   }
 }
 
@@ -621,6 +655,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("send-btn").addEventListener("click", sendMessage);
   document.getElementById("new-btn").addEventListener("click", startNewConversation);
   document.getElementById("theme-btn").addEventListener("click", toggleTheme);
+  document.getElementById("copy-btn").addEventListener("click", copyChat);
   document.getElementById("export-btn").addEventListener("click", exportConversation);
   document.getElementById("settings-btn").addEventListener("click", toggleSettingsBar);
   document.getElementById("close-history").addEventListener("click", hideHistoryPanel);
