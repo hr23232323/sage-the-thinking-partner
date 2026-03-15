@@ -650,6 +650,26 @@ textarea::placeholder { color: var(--text-faint); font-style: italic; }
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
+.drawer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.drawer-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.drawer-action-btn svg { width: 13px; height: 13px; }
+.drawer-action-btn:hover { color: var(--text); }
+
 .drawer-title {
   font-family: var(--display);
   font-style: italic;

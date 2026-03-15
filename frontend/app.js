@@ -398,6 +398,24 @@ function hideHistoryPanel() {
   document.getElementById("history-btn").classList.remove("active");
 }
 
+// ── Export ────────────────────────────────────────────────────────────────────
+
+function exportConversation() {
+  if (!messages.length) return;
+  const title = getConversationTitle(messages);
+  const md = messages.map(m => {
+    const label = m.role === "user" ? "**You**" : "**sage**";
+    return `${label}\n\n${m.content}`;
+  }).join("\n\n---\n\n");
+  const blob = new Blob([`# ${title}\n\n${md}\n`], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${title.slice(0, 40).replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ── Send ──────────────────────────────────────────────────────────────────────
 
 async function sendMessage() {
@@ -603,6 +621,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("send-btn").addEventListener("click", sendMessage);
   document.getElementById("new-btn").addEventListener("click", startNewConversation);
   document.getElementById("theme-btn").addEventListener("click", toggleTheme);
+  document.getElementById("export-btn").addEventListener("click", exportConversation);
   document.getElementById("settings-btn").addEventListener("click", toggleSettingsBar);
   document.getElementById("close-history").addEventListener("click", hideHistoryPanel);
   document.getElementById("drawer-backdrop").addEventListener("click", hideHistoryPanel);
