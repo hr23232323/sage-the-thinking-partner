@@ -660,19 +660,44 @@ textarea::placeholder { color: var(--text-faint); font-style: italic; }
 
 .history-item {
   display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+  position: relative;
+}
+.history-item:hover { background: var(--surface); }
+.history-item:last-child { border-bottom: none; }
+
+.history-load {
+  flex: 1;
+  display: flex;
   flex-direction: column;
   align-items: flex-start;
-  width: 100%;
   padding: 11px 18px;
   border: none;
   background: none;
   cursor: pointer;
   text-align: left;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.1s;
+  min-width: 0;
 }
-.history-item:hover { background: var(--surface); }
-.history-item:last-child { border-bottom: none; }
+
+.history-delete {
+  flex-shrink: 0;
+  width: 36px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  padding: 0;
+}
+.history-delete svg { width: 11px; height: 11px; }
+.history-delete:hover { color: var(--error); }
+.history-item:hover .history-delete { opacity: 1; }
 
 .history-title {
   font-family: var(--serif);

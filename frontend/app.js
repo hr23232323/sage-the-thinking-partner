@@ -21,6 +21,9 @@ async function getConversations() {
 async function saveConversation(conversation) {
   return invoke("save_conversation", { conversation });
 }
+async function deleteConversation(id) {
+  return invoke("delete_conversation", { id });
+}
 
 // ── Models ────────────────────────────────────────────────────────────────────
 const MODELS = [
@@ -293,13 +296,33 @@ function showHistoryPanel() {
       return;
     }
     convs.forEach(conv => {
-      const item = document.createElement("button");
+      const item = document.createElement("div");
       item.className = "history-item";
-      item.innerHTML = `
+
+      const load = document.createElement("button");
+      load.className = "history-load";
+      load.innerHTML = `
         <span class="history-title">${escapeHtml(conv.title || "Untitled")}</span>
         <span class="history-date">${new Date(conv.created_at).toLocaleDateString()}</span>
       `;
-      item.addEventListener("click", () => loadConversation(conv));
+      load.addEventListener("click", () => loadConversation(conv));
+
+      const del = document.createElement("button");
+      del.className = "history-delete";
+      del.title = "Delete thread";
+      del.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>`;
+      del.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await deleteConversation(conv.id);
+        if (currentConversationId === conv.id) startNewConversation();
+        item.remove();
+        if (!list.querySelector(".history-item")) {
+          list.innerHTML = "<p class='history-empty'>no threads yet</p>";
+        }
+      });
+
+      item.appendChild(load);
+      item.appendChild(del);
       list.appendChild(item);
     });
   });
