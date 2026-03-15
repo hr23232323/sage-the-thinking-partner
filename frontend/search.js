@@ -42,7 +42,7 @@ export const WEB_SEARCH_TOOL = {
 export async function parseStream(reader, onDelta) {
   const decoder = new TextDecoder();
   let buffer = "";
-  let pendingToolCall = null;
+  const pendingToolCalls = {}; // keyed by index — handles models that emit multiple tool calls
 
   while (true) {
     const { done, value } = await reader.read();
@@ -60,15 +60,16 @@ export async function parseStream(reader, onDelta) {
         const data = JSON.parse(payload);
         if (data.error) throw new Error(data.error.message ?? JSON.stringify(data.error));
 
-        // Accumulate tool call deltas (may arrive across multiple chunks)
+        // Accumulate tool call deltas per index (models may emit multiple tool calls)
         const tcDelta = data.choices?.[0]?.delta?.tool_calls;
         if (tcDelta) {
           console.log("[sage] tool_call delta:", JSON.stringify(tcDelta));
           for (const tc of tcDelta) {
-            if (!pendingToolCall) pendingToolCall = { id: "", name: "", args: "" };
-            if (tc.id) pendingToolCall.id = tc.id;
-            if (tc.function?.name) pendingToolCall.name += tc.function.name;
-            if (tc.function?.arguments) pendingToolCall.args += tc.function.arguments;
+            const idx = tc.index ?? 0;
+            if (!pendingToolCalls[idx]) pendingToolCalls[idx] = { id: "", name: "", args: "" };
+            if (tc.id) pendingToolCalls[idx].id = tc.id;
+            if (tc.function?.name) pendingToolCalls[idx].name += tc.function.name;
+            if (tc.function?.arguments) pendingToolCalls[idx].args += tc.function.arguments;
           }
         }
 
@@ -80,7 +81,9 @@ export async function parseStream(reader, onDelta) {
     }
   }
 
-  return { toolCall: pendingToolCall?.name ? pendingToolCall : null };
+  // Use the first valid tool call; ignore any extras
+  const firstToolCall = Object.values(pendingToolCalls).find(tc => tc.name) ?? null;
+  return { toolCall: firstToolCall };
 }
 
 /**
@@ -150,7 +153,13 @@ export async function orchestrateMessage({
 
   // ── Model triggered a search ───────────────────────────────────────────────
   onSearching?.();
-  const query = JSON.parse(toolCall.args).query;
+  let query;
+  try {
+    query = JSON.parse(toolCall.args).query;
+  } catch (e) {
+    console.warn("[sage] tool call args parse failed, skipping search:", toolCall.args);
+    return { fullText, usedSearch: false };
+  }
   console.log("[sage] searching with model:", searchModel(model), "| query:", query);
 
   let searchResult;

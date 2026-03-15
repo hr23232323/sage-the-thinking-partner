@@ -83,6 +83,33 @@ describe("parseStream", () => {
     assert.equal(toolCall.name, "web_search");
     assert.deepEqual(JSON.parse(toolCall.args), { query: "world news today 2026" });
   });
+
+  test("multiple simultaneous tool calls: uses first, ignores rest", async () => {
+    // Gemini 2.5 Pro sometimes emits 2 tool calls (index 0 and 1) for compound questions.
+    // parseStream must track by index and return only index 0.
+    function multiToolChunk(calls) {
+      return { choices: [{ delta: { tool_calls: calls }, finish_reason: null }] };
+    }
+    const reader = makeReader([
+      sseChunk(multiToolChunk([
+        { index: 0, id: "call_AAA", type: "function", function: { name: "web_search", arguments: "" } },
+        { index: 1, id: "call_BBB", type: "function", function: { name: "web_search", arguments: "" } },
+      ])),
+      sseChunk(multiToolChunk([
+        { index: 0, function: { arguments: '{"query":"gold price reasons"}' } },
+        { index: 1, function: { arguments: '{"query":"gold USD correlation"}' } },
+      ])),
+      sseChunk({ choices: [{ delta: {}, finish_reason: "tool_calls" }] }),
+      sseDone(),
+    ]);
+
+    const { toolCall } = await parseStream(reader, () => {});
+
+    assert.equal(toolCall.id, "call_AAA", "returns first tool call (index 0)");
+    assert.equal(toolCall.name, "web_search");
+    assert.deepEqual(JSON.parse(toolCall.args), { query: "gold price reasons" },
+      "args are only from index 0, not concatenated across calls");
+  });
 });
 
 // ── Test 2: orchestrateMessage — multi-turn WITHOUT web search ────────────────
