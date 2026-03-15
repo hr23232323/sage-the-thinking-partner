@@ -10,29 +10,50 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
   <header>
     <div class="header-left">
       <span class="logo">sage</span>
       <span class="tagline">think together</span>
     </div>
     <div class="header-right">
-      <select id="model-select" title="Select model"></select>
-      <label class="web-toggle" title="Enable web search (appends :online)">
-        <input type="checkbox" id="web-search-toggle" checked />
-        <span class="web-pill">
-          <span class="web-dot"></span>
-          web
-        </span>
-      </label>
-      <button id="new-btn">new thread</button>
-      <button id="settings-btn" title="API key settings">⚙</button>
+      <button id="history-btn" class="icon-btn" title="Threads">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="8" r="5.5"/>
+          <polyline points="8,5 8,8.5 10,10.5"/>
+        </svg>
+      </button>
+      <button id="new-btn" class="new-btn">new</button>
+      <button id="settings-btn" class="icon-btn" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
     </div>
   </header>
 
-  <div id="settings-bar" class="settings-bar hidden">
-    <label class="settings-label" for="api-key-input">openrouter key</label>
-    <input type="password" id="api-key-input" placeholder="sk-or-..." autocomplete="off" spellcheck="false" />
-    <button id="save-key-btn">save</button>
+  <!-- Settings panel — slides down from header -->
+  <div id="settings-bar" class="settings-panel">
+    <div class="sp-row">
+      <span class="sp-label">model</span>
+      <select id="model-select" title="Select model"></select>
+    </div>
+    <div class="sp-row">
+      <span class="sp-label">web</span>
+      <label class="web-toggle" title="Append :online to model">
+        <input type="checkbox" id="web-search-toggle" checked />
+        <span class="web-pill">
+          <span class="web-dot"></span>
+          search
+        </span>
+      </label>
+    </div>
+    <div class="sp-row">
+      <span class="sp-label">api key</span>
+      <input type="password" id="api-key-input" placeholder="sk-or-..." autocomplete="off" spellcheck="false" />
+      <button id="save-key-btn">save</button>
+    </div>
   </div>
 
   <main id="conversation">
@@ -68,6 +89,21 @@
       </div>
     </div>
   </footer>
+
+  <!-- History drawer + backdrop (fixed overlays) -->
+  <div id="drawer-backdrop" class="drawer-backdrop"></div>
+  <nav id="history-drawer" class="history-drawer">
+    <div class="drawer-header">
+      <span class="drawer-title">threads</span>
+      <button id="close-history" class="drawer-close" title="Close">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <line x1="3" y1="3" x2="13" y2="13"/>
+          <line x1="13" y1="3" x2="3" y2="13"/>
+        </svg>
+      </button>
+    </div>
+    <div class="history-list" id="history-list"></div>
+  </nav>
 
   <script type="module" src="app.js"></script>
 </body>
