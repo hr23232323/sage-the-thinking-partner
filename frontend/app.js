@@ -32,6 +32,51 @@ async function setPrefs(prefs) {
   return invoke("set_prefs", { prefs });
 }
 
+// ── Modes ─────────────────────────────────────────────────────────────────────
+const MODE_LIST = [
+  { key: "steelman",          desc: "strongest version of your position" },
+  { key: "devil's advocate",  desc: "hard opposing stance, find real flaws" },
+  { key: "first principles",  desc: "strip back, challenge every assumption" },
+  { key: "simplify",          desc: "plain, concrete, no jargon" },
+];
+
+let pickerOpen = false;
+let pickerIndex = 0;
+
+function openPicker() {
+  document.getElementById("mode-picker").hidden = false;
+  pickerOpen = true;
+  pickerIndex = 0;
+  updatePickerHighlight();
+}
+
+function closePicker(clearSlash = true) {
+  document.getElementById("mode-picker").hidden = true;
+  pickerOpen = false;
+  if (clearSlash) {
+    const input = document.getElementById("input");
+    if (input.value === "/") { input.value = ""; autoResize(input); }
+  }
+}
+
+function updatePickerHighlight() {
+  document.querySelectorAll(".mode-picker-item").forEach((el, i) =>
+    el.classList.toggle("highlighted", i === pickerIndex));
+}
+
+function setMode(mode) {
+  activeMode = mode;
+  document.getElementById("mode-chip-label").textContent = mode;
+  const chip = document.getElementById("mode-chip");
+  chip.style.display = "flex";
+  closePicker(false);
+}
+
+function clearMode() {
+  activeMode = null;
+  document.getElementById("mode-chip").style.display = "none";
+}
+
 // ── Models ────────────────────────────────────────────────────────────────────
 const MODELS = [
   "qwen/qwen3-32b:nitro",
@@ -287,10 +332,8 @@ async function loadConversation(conversation) {
     }
   }
   
-  // Update mode buttons
-  document.querySelectorAll(".mode-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.mode === activeMode);
-  });
+  // Restore active mode chip
+  if (activeMode) setMode(activeMode); else clearMode();
   
   hideHistoryPanel();
   updateCopyBtn();
@@ -313,7 +356,7 @@ function startNewConversation() {
     </div>
   `;
   renderTopicWall();
-  document.querySelectorAll(".mode-btn").forEach(btn => btn.classList.remove("active"));
+  clearMode();
   updateCopyBtn();
 }
 
@@ -519,8 +562,7 @@ async function sendMessage() {
     if (observer) observer.disconnect();
     if (mdParser) smd.parser_end(mdParser);
     if (!hasError && fullText) messages.push({ role: "assistant", content: fullText });
-    activeMode = null;
-    document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+    clearMode();
     setStreaming(false);
     scrollToBottom();
     if (!hasError && messages.length > 0) saveCurrentConversation();
@@ -656,13 +698,6 @@ function autoResize(el) {
 
 document.addEventListener("DOMContentLoaded", () => {
   const input = document.getElementById("input");
-  input.addEventListener("input", () => autoResize(input));
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
 
   document.getElementById("send-btn").addEventListener("click", sendMessage);
   document.getElementById("new-btn").addEventListener("click", startNewConversation);
@@ -692,20 +727,66 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Mode buttons — toggle active, one-shot (reset after send)
-  document.querySelectorAll(".mode-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const mode = btn.dataset.mode;
-      if (activeMode === mode) {
-        activeMode = null;
-        btn.classList.remove("active");
-      } else {
-        activeMode = mode;
-        document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-      }
+  // ── Slash mode picker ───────────────────────────────────────────────────────
+  const pickerEl = document.getElementById("mode-picker");
+  MODE_LIST.forEach((m, i) => {
+    const item = document.createElement("div");
+    item.className = "mode-picker-item";
+    item.innerHTML = `<span class="mpi-name">${m.key}</span><span class="mpi-desc">${m.desc}</span>`;
+    item.addEventListener("mouseenter", () => { pickerIndex = i; updatePickerHighlight(); });
+    item.addEventListener("click", () => {
+      setMode(m.key);
+      input.value = "";
+      autoResize(input);
+      input.focus();
     });
+    pickerEl.appendChild(item);
   });
+
+  // Open on `/` typed into empty textarea
+  input.addEventListener("keydown", (e) => {
+    if (pickerOpen) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        pickerIndex = (pickerIndex + 1) % MODE_LIST.length;
+        updatePickerHighlight();
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        pickerIndex = (pickerIndex - 1 + MODE_LIST.length) % MODE_LIST.length;
+        updatePickerHighlight();
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        setMode(MODE_LIST[pickerIndex].key);
+        input.value = "";
+        autoResize(input);
+        return;
+      }
+      if (e.key === "Escape") { closePicker(); return; }
+    }
+    if (e.key === "/" && input.value === "") { openPicker(); return; }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  // Close picker when user types anything other than /
+  input.addEventListener("input", () => {
+    autoResize(input);
+    if (input.value === "/" && !pickerOpen) openPicker();
+    else if (pickerOpen && input.value !== "/") closePicker(false);
+  });
+
+  // Click outside picker closes it
+  document.addEventListener("click", (e) => {
+    if (pickerOpen && !e.target.closest("#mode-picker") && e.target !== input) {
+      closePicker();
+    }
+  });
+
+  // Mode chip clear
+  document.getElementById("mode-chip-clear").addEventListener("click", clearMode);
 
   renderTopicWall();
   init();

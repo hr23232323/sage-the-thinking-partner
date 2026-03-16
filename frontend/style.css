@@ -602,38 +602,95 @@ footer {
   background: var(--bg);
   padding: 18px 28px 24px;
   flex-shrink: 0;
+  position: relative;
+  overflow: visible;
 }
 .compose { max-width: var(--max-w); margin: 0 auto; }
 
-/* Mode bar */
-.mode-bar {
+/* ── Slash mode picker ─────────────────────────────────── */
+.mode-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 28px;
+  right: 28px;
+  margin-bottom: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border-dark);
+  border-radius: 10px;
+  box-shadow: 0 -6px 24px rgba(0,0,0,0.09), 0 -1px 4px rgba(0,0,0,0.05);
+  overflow: hidden;
+  z-index: 50;
+  animation: picker-rise 0.13s ease forwards;
+}
+@keyframes picker-rise {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mode-picker-item {
   display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.mode-picker-item:last-child { border-bottom: none; }
+.mode-picker-item:hover,
+.mode-picker-item.highlighted { background: var(--accent-bg); }
+.mode-picker-item.highlighted .mpi-name { color: var(--accent); }
+.mpi-name {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: color 0.1s;
+}
+.mpi-desc {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.mode-btn {
+/* ── Active mode chip ──────────────────────────────────── */
+.mode-chip {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+  width: fit-content;
   font-family: var(--mono);
   font-size: 9.5px;
   letter-spacing: 0.06em;
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--text-faint);
-  padding: 4px 10px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.mode-btn:hover {
-  border-color: var(--border-dark);
-  color: var(--text-muted);
-}
-.mode-btn.active {
-  background: var(--accent-bg);
-  border-color: var(--accent);
   color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  padding: 3px 8px 3px 10px;
+  animation: chip-in 0.15s ease forwards;
 }
+@keyframes chip-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mode-chip-dot { font-size: 7px; opacity: 0.65; }
+.mode-chip-clear {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 0 0 2px;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+.mode-chip-clear:hover { opacity: 1; }
 
 .compose-field {
   border-top: 1px solid var(--border);

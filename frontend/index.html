@@ -80,14 +80,14 @@
   </main>
 
   <footer>
+    <div id="mode-picker" class="mode-picker" hidden></div>
     <div class="compose">
-      <div class="mode-bar">
-        <button class="mode-btn" data-mode="steelman">steelman</button>
-        <button class="mode-btn" data-mode="devil's advocate">devil's advocate</button>
-        <button class="mode-btn" data-mode="first principles">first principles</button>
-        <button class="mode-btn" data-mode="simplify">simplify</button>
-      </div>
       <div class="compose-field">
+        <div id="mode-chip" class="mode-chip" style="display:none">
+          <span class="mode-chip-dot">◆</span>
+          <span id="mode-chip-label" class="mode-chip-label"></span>
+          <button id="mode-chip-clear" class="mode-chip-clear" aria-label="Clear mode">×</button>
+        </div>
         <textarea id="input" placeholder="What are you thinking about?" rows="1" autofocus></textarea>
       </div>
       <div class="compose-actions">
@@ -101,7 +101,7 @@
           </svg>
           <span class="copy-label">copy</span>
         </button>
-        <span class="compose-hint">↵ send &nbsp;·&nbsp; shift+↵ newline</span>
+        <span class="compose-hint">↵ send &nbsp;·&nbsp; shift+↵ newline &nbsp;·&nbsp; / modes</span>
         <button id="send-btn" title="Send">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <line x1="10" y1="17" x2="10" y2="4"/>
