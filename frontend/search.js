@@ -61,7 +61,9 @@ export async function parseStream(reader, onDelta) {
         if (data.error) throw new Error(data.error.message ?? JSON.stringify(data.error));
 
         // Accumulate tool call deltas per index (models may emit multiple tool calls)
-        const tcDelta = data.choices?.[0]?.delta?.tool_calls;
+        const delta = data.choices?.[0]?.delta;
+        if (delta && Object.keys(delta).length) console.log("[sage] raw delta:", JSON.stringify(delta));
+        const tcDelta = delta?.tool_calls;
         if (tcDelta) {
           console.log("[sage] tool_call delta:", JSON.stringify(tcDelta));
           for (const tc of tcDelta) {
@@ -73,8 +75,8 @@ export async function parseStream(reader, onDelta) {
           }
         }
 
-        const delta = data.choices?.[0]?.delta?.content;
-        if (delta) onDelta(delta);
+        const content = delta?.content;
+        if (content) onDelta(content);
       } catch (e) {
         if (e.message !== "undefined") throw e;
       }
