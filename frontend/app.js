@@ -472,8 +472,11 @@ async function sendMessage() {
 
   function onDelta(delta) {
     if (!contentEl) {
+      const logEl = thinkingEl.querySelector(".thinking-log");
+      const stepsHtml = logEl && logEl.children.length ? logEl.innerHTML : "";
       if (thinkingEl.parentNode) collapseThinking(thinkingEl, () => {});
       const el = appendMessage("assistant", "");
+      if (stepsHtml) attachThinkingReplay(el, stepsHtml);
       contentEl = el.querySelector(".bubble-content");
       mdParser = smd.parser(smd.default_renderer(contentEl));
       observer = new MutationObserver((mutations) => {
@@ -537,6 +540,12 @@ function appendMessage(role, text) {
   const body = document.createElement("div");
   body.className = "msg-body";
 
+  if (role === "assistant") {
+    const header = document.createElement("div");
+    header.className = "msg-header";
+    body.appendChild(header);
+  }
+
   const content = document.createElement("div");
   content.className = "bubble-content";
   if (text) content.innerHTML = role === "user" ? escapeHtml(text) : text;
@@ -546,6 +555,27 @@ function appendMessage(role, text) {
   conversation.appendChild(msg);
   scrollToBottom();
   return msg;
+}
+
+function attachThinkingReplay(msgEl, stepsHtml) {
+  const header = msgEl.querySelector(".msg-header");
+  if (!header) return;
+
+  const btn = document.createElement("button");
+  btn.className = "msg-sage-toggle";
+  btn.innerHTML = `sage <span class="sage-toggle-arrow">▸</span>`;
+
+  const replay = document.createElement("div");
+  replay.className = "thinking-replay";
+  replay.innerHTML = stepsHtml;
+
+  btn.addEventListener("click", () => {
+    const open = replay.classList.toggle("open");
+    btn.classList.toggle("open", open);
+  });
+
+  header.appendChild(btn);
+  header.appendChild(replay);
 }
 
 function createThinkingIndicator() {

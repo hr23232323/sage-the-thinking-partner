@@ -497,6 +497,8 @@ main {
   align-items: baseline;
   gap: 6px;
   padding-top: 5px;
+}
+.thinking-log .thinking-step {
   opacity: 0;
   transform: translateY(4px);
   animation: step-in 0.22s ease forwards;
@@ -525,6 +527,58 @@ main {
 }
 @keyframes step-in {
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Assistant message header + thinking replay ────────── */
+.msg-header:empty { display: none; }
+.msg-header { margin-bottom: 6px; }
+
+.msg-sage-toggle {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.4;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: opacity 0.15s;
+  user-select: none;
+  line-height: 1;
+}
+.msg-sage-toggle:hover { opacity: 0.8; }
+
+.sage-toggle-arrow {
+  display: inline-block;
+  font-size: 7px;
+  transition: transform 0.18s ease;
+  opacity: 0.7;
+}
+.msg-sage-toggle.open .sage-toggle-arrow { transform: rotate(90deg); }
+
+.thinking-replay {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  opacity: 0;
+  padding-left: 1px;
+}
+.thinking-replay.open {
+  max-height: 140px;
+  opacity: 1;
+}
+/* Replay steps don't animate in — they're already "done" */
+.thinking-replay .thinking-step {
+  opacity: 1;
+  transform: none;
+  animation: none;
+  padding-top: 3px;
 }
 
 /* ── Streaming fade-in ─────────────────────────────────── */
