@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sage — icon system</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #faf9f7;
+      --surface: #f2f0ed;
+      --border: #e4e0da;
+      --border-dark: #ccc8c1;
+      --text: #1c1a18;
+      --text-muted: #7a746d;
+      --text-faint: #b8b2ab;
+      --accent: #8b5e3c;
+      --display: 'Playfair Display', Georgia, serif;
+      --serif: 'Lora', Georgia, serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--serif);
+      min-height: 100vh;
+      padding: 72px 48px 120px;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      max-width: 860px;
+      margin: 0 auto 72px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-header-left h1 {
+      font-family: var(--display);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 32px;
+      color: var(--accent);
+      letter-spacing: -0.01em;
+    }
+
+    .page-header-left p {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .page-header-right {
+      font-family: var(--display);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    /* ── Section ── */
+    section {
+      max-width: 860px;
+      margin: 0 auto 64px;
+    }
+
+    .section-label {
+      font-family: var(--display);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 24px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    /* ── Mark showcase ── */
+    .mark-showcase {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 60px;
+      gap: 64px;
+    }
+
+    .mark-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .mark-name {
+      font-family: var(--display);
+      font-style: italic;
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .mark-annotation {
+      font-size: 12px;
+      color: var(--text-faint);
+      font-style: italic;
+      text-align: center;
+      max-width: 180px;
+      line-height: 1.6;
+    }
+
+    /* ── Wordmark ── */
+    .wordmark-section {
+      padding: 48px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    .wm-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .wm-text {
+      font-family: var(--display);
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .wm-tagline {
+      display: block;
+      font-family: var(--serif);
+      font-size: 0.38em;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+
+    .wm-divider {
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── App icon sizes ── */
+    .sizes-row {
+      padding: 48px 56px;
+      display: flex;
+      align-items: flex-end;
+      gap: 36px;
+      flex-wrap: wrap;
+    }
+
+    .size-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .size-label {
+      font-family: var(--display);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    .app-icon {
+      border-radius: 22.37%;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse at 32% 24%, rgba(255,252,248,0.55) 0%, transparent 55%),
+        linear-gradient(148deg, #faf9f7 0%, #e5dfd6 100%);
+      box-shadow:
+        0 1px 3px rgba(80,50,20,0.10),
+        0 4px 16px rgba(80,50,20,0.06),
+        inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+
+    /* ── Menu bar ── */
+    .menubar-section {
+      padding: 40px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .menubar-label {
+      font-size: 11px;
+      color: var(--text-faint);
+      letter-spacing: 0.08em;
+      margin-bottom: -8px;
+    }
+
+    .fake-menubar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 18px;
+      padding: 0 18px;
+      height: 38px;
+      border-radius: 8px;
+    }
+
+    .fake-menubar.light { background: #ddd9d4; }
+    .fake-menubar.dark  { background: #252320; }
+
+    .mb-clock {
+      font-family: -apple-system, sans-serif;
+      font-size: 12px;
+    }
+    .fake-menubar.light .mb-clock { color: rgba(0,0,0,0.65); }
+    .fake-menubar.dark  .mb-clock { color: rgba(255,255,255,0.65); }
+
+    .mb-icon-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 5px;
+      border-radius: 4px;
+    }
+    .fake-menubar.light .mb-icon-wrap.active { background: rgba(0,0,0,0.12); }
+    .fake-menubar.dark  .mb-icon-wrap.active { background: rgba(255,255,255,0.15); }
+
+    /* ── Palette ── */
+    .palette-row {
+      display: flex;
+      border-radius: 10px;
+      overflow: hidden;
+      height: 64px;
+    }
+
+    .swatch {
+      flex: 1;
+      position: relative;
+    }
+
+    .swatch-label {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--display);
+      font-size: 9px;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+
+    /* ── Export note ── */
+    .export-note {
+      margin-top: 32px;
+      padding: 24px 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .export-note strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .export-note code {
+      font-family: 'JetBrains Mono', 'Menlo', monospace;
+      font-size: 11.5px;
+      background: var(--border);
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: var(--accent);
+    }
+
+    /* Animation */
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 8px 24px rgba(139,94,60,0.18)); }
+      50%       { transform: scale(1.025); filter: drop-shadow(0 12px 32px rgba(139,94,60,0.28)); }
+    }
+
+    .breathing {
+      animation: breathe 4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <div class="page-header-left">
+      <h1>sage</h1>
+      <p>icon system · logomark · wordmark · app icon</p>
+    </div>
+    <div class="page-header-right">v 0.1 · march 2026</div>
+  </header>
+
+  <!-- ── 1. The Mark ───────────────────────────────────────────── -->
+  <section>
+    <div class="section-label">The Mark</div>
+    <div class="card">
+      <div class="mark-showcase">
+
+        <div class="mark-annotation">
+          A cut-gem diamond —<br>
+          four facets, warm brown,<br>
+          readable at any size.
+        </div>
+
+        <div class="mark-center">
+          <div class="breathing">
+            <svg width="180" height="180" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <!-- 4-facet gem: each quadrant a distinct tone -->
+              <path d="M 50,3  L 3,50  L 50,50 Z" fill="#aa7252"/><!-- top-left: highlight -->
+              <path d="M 50,3  L 97,50 L 50,50 Z" fill="#8b5e3c"/><!-- top-right: main -->
+              <path d="M 97,50 L 50,97 L 50,50 Z" fill="#5a3822"/><!-- bottom-right: shadow -->
+              <path d="M 50,97 L 3,50  L 50,50 Z" fill="#7a4e2e"/><!-- bottom-left: mid -->
+              <!-- Facet lines (very subtle) -->
+              <line x1="50" y1="3"  x2="50" y2="97" stroke="#faf9f7" stroke-width="0.55" stroke-opacity="0.28"/>
+              <line x1="3"  y1="50" x2="97" y2="50" stroke="#faf9f7" stroke-width="0.55" stroke-opacity="0.28"/>
+              <!-- Outer edge — tiny bit of depth -->
+              <path d="M 50,3 L 97,50 L 50,97 L 3,50 Z" fill="none" stroke="#3b2110" stroke-width="0.6" stroke-opacity="0.18"/>
+            </svg>
+          </div>
+          <span class="mark-name">sage mark</span>
+        </div>
+
+        <div class="mark-annotation">
+          The existing ◆ motif<br>
+          elevated — faceted like<br>
+          a gem, not a glyph.
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2. Wordmark ───────────────────────────────────────────── -->
+  <section>
+    <div class="section-label">Wordmark</div>
+    <div class="card">
+      <div class="wordmark-section">
+
+        <!-- Large -->
+        <div class="wm-row">
+          <svg width="56" height="56" viewBox="0 0 100 100">
+            <path d="M 50,3 L 3,50 L 50,50 Z"  fill="#aa7252"/>
+            <path d="M 50,3 L 97,50 L 50,50 Z"  fill="#8b5e3c"/>
+            <path d="M 97,50 L 50,97 L 50,50 Z" fill="#5a3822"/>
+            <path d="M 50,97 L 3,50 L 50,50 Z"  fill="#7a4e2e"/>
+            <line x1="50" y1="3" x2="50" y2="97" stroke="#faf9f7" stroke-width="0.6" stroke-opacity="0.25"/>
+            <line x1="3" y1="50" x2="97" y2="50" stroke="#faf9f7" stroke-width="0.6" stroke-opacity="0.25"/>
+          </svg>
+          <div class="wm-text" style="font-size:52px; font-style:italic; font-weight:400;">
+            sage
+            <span class="wm-tagline">think together</span>
+          </div>
+        </div>
+
+        <div class="wm-divider"></div>
+
+        <!-- Medium -->
+        <div class="wm-row">
+          <svg width="34" height="34" viewBox="0 0 100 100">
+            <path d="M 50,3 L 3,50 L 50,50 Z"  fill="#aa7252"/>
+            <path d="M 50,3 L 97,50 L 50,50 Z"  fill="#8b5e3c"/>
+            <path d="M 97,50 L 50,97 L 50,50 Z" fill="#5a3822"/>
+            <path d="M 50,97 L 3,50 L 50,50 Z"  fill="#7a4e2e"/>
+            <line x1="50" y1="3" x2="50" y2="97" stroke="#faf9f7" stroke-width="0.6" stroke-opacity="0.25"/>
+            <line x1="3" y1="50" x2="97" y2="50" stroke="#faf9f7" stroke-width="0.6" stroke-opacity="0.25"/>
+          </svg>
+          <div class="wm-text" style="font-size:28px; font-style:italic; font-weight:400;">sage</div>
+        </div>
+
+        <div class="wm-divider"></div>
+
+        <!-- Small -->
+        <div class="wm-row">
+          <svg width="18" height="18" viewBox="0 0 100 100">
+            <path d="M 50,3 L 3,50 L 50,50 Z"  fill="#aa7252"/>
+            <path d="M 50,3 L 97,50 L 50,50 Z"  fill="#8b5e3c"/>
+            <path d="M 97,50 L 50,97 L 50,50 Z" fill="#5a3822"/>
+            <path d="M 50,97 L 3,50 L 50,50 Z"  fill="#7a4e2e"/>
+          </svg>
+          <div class="wm-text" style="font-size:17px; font-style:italic; font-weight:400;">sage</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. App Icon Sizes ─────────────────────────────────────── -->
+  <section>
+    <div class="section-label">App Icon — All Sizes</div>
+    <div class="card">
+      <div class="sizes-row">
+
+        <!-- 1024 shown at 200px -->
+        <div class="size-item">
+          <div class="app-icon" style="width:200px;height:200px;">
+            <svg width="124" height="124" viewBox="0 0 100 100">
+              <path d="M 50,3 L 3,50 L 50,50 Z"  fill="#aa7252"/>
+              <path d="M 50,3 L 97,50 L 50,50 Z"  fill="#8b5e3c"/>
+              <path d="M 97,50 L 50,97 L 50,50 Z" fill="#5a3822"/>
+              <path d="M 50,97 L 3,50 L 50,50 Z"  fill="#7a4e2e"/>
+              <line x1="50" y1="3"  x2="50" y2="97" stroke="#faf9f7" stroke-width="0.6" stroke-opacity="0.3"/>
+              <line x1="3"  y1="50" x2="97" y2="50" stroke="#faf9f7" stroke-width="0.6" stroke-opacity="0.3"/>
+              <path d="M 50,3 L 97,50 L 50,97 L 3,50 Z" fill="none" stroke="#2e1a09" stroke-width="0.6" stroke-opacity="0.12"/>
+            </svg>
+          </div>
+          <span class="size-label">1024</span>
+        </div>
+
+        <!-- 128 -->
+        <div class="size-item">
+          <div class="app-icon" style="width:128px;height:128px;">
+            <svg width="80" height="80" viewBox="0 0 100 100">
+              <path d="M 50,3 L 3,50 L 50,50 Z"  fill="#aa7252"/>
+              <path d="M 50,3 L 97,50 L 50,50 Z"  fill="#8b5e3c"/>
+              <path d="M 97,50 L 50,97 L 50,50 Z" fill="#5a3822"/>
+              <path d="M 50,97 L 3,50 L 50,50 Z"  fill="#7a4e2e"/>
+              <line x1="50" y1="3"  x2="50" y2="97" stroke="#faf9f7" stroke-width="0.6" stroke-opacity="0.25"/>
+              <line x1="3"  y1="50" x2="97" y2="50" stroke="#faf9f7" stroke-width="0.6" stroke-opacity="0.25"/>
+            </svg>
+          </div>
+          <span class="size-label">128</span>
+        </div>
+
+        <!-- 64 -->
+        <div class="size-item">
+          <div class="app-icon" style="width:64px;height:64px;">
+            <svg width="40" height="40" viewBox="0 0 100 100">
+              <path d="M 50,3 L 3,50 L 50,50 Z"  fill="#aa7252"/>
+              <path d="M 50,3 L 97,50 L 50,50 Z"  fill="#8b5e3c"/>
+              <path d="M 97,50 L 50,97 L 50,50 Z" fill="#5a3822"/>
+              <path d="M 50,97 L 3,50 L 50,50 Z"  fill="#7a4e2e"/>
+            </svg>
+          </div>
+          <span class="size-label">64</span>
+        </div>
+
+        <!-- 32 -->
+        <div class="size-item">
+          <div class="app-icon" style="width:32px;height:32px;">
+            <svg width="20" height="20" viewBox="0 0 100 100">
+              <path d="M 50,3 L 3,50 L 50,50 Z"  fill="#aa7252"/>
+              <path d="M 50,3 L 97,50 L 50,50 Z"  fill="#8b5e3c"/>
+              <path d="M 97,50 L 50,97 L 50,50 Z" fill="#5a3822"/>
+              <path d="M 50,97 L 3,50 L 50,50 Z"  fill="#7a4e2e"/>
+            </svg>
+          </div>
+          <span class="size-label">32</span>
+        </div>
+
+        <!-- 16 -->
+        <div class="size-item">
+          <div class="app-icon" style="width:16px;height:16px;">
+            <svg width="10" height="10" viewBox="0 0 100 100">
+              <path d="M 50,3 L 3,50 L 50,50 Z"  fill="#aa7252"/>
+              <path d="M 50,3 L 97,50 L 50,50 Z"  fill="#8b5e3c"/>
+              <path d="M 97,50 L 50,97 L 50,50 Z" fill="#5a3822"/>
+              <path d="M 50,97 L 3,50 L 50,50 Z"  fill="#7a4e2e"/>
+            </svg>
+          </div>
+          <span class="size-label">16</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4. Menu Bar ───────────────────────────────────────────── -->
+  <section>
+    <div class="section-label">Menu Bar Icon</div>
+    <div class="card">
+      <div class="menubar-section">
+
+        <span class="menubar-label">Light menu bar</span>
+        <div class="fake-menubar light">
+          <span class="mb-clock">Tue 17 Mar &nbsp; 10:24 AM</span>
+
+          <!-- Dummy icons -->
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.45)" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.45)" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/></svg>
+
+          <!-- Sage (active, black template) -->
+          <div class="mb-icon-wrap active">
+            <svg width="16" height="16" viewBox="0 0 100 100">
+              <path d="M 50,3 L 3,50 L 50,50 Z"  fill="#000" opacity="0.9"/>
+              <path d="M 50,3 L 97,50 L 50,50 Z"  fill="#000" opacity="0.8"/>
+              <path d="M 97,50 L 50,97 L 50,50 Z" fill="#000" opacity="0.55"/>
+              <path d="M 50,97 L 3,50 L 50,50 Z"  fill="#000" opacity="0.65"/>
+            </svg>
+          </div>
+        </div>
+
+        <span class="menubar-label" style="margin-top:8px;">Dark menu bar</span>
+        <div class="fake-menubar dark">
+          <span class="mb-clock">Tue 17 Mar &nbsp; 10:24 AM</span>
+
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/></svg>
+
+          <!-- Sage (active, white template) -->
+          <div class="mb-icon-wrap active">
+            <svg width="16" height="16" viewBox="0 0 100 100">
+              <path d="M 50,3 L 3,50 L 50,50 Z"  fill="#fff" opacity="0.95"/>
+              <path d="M 50,3 L 97,50 L 50,50 Z"  fill="#fff" opacity="0.85"/>
+              <path d="M 97,50 L 50,97 L 50,50 Z" fill="#fff" opacity="0.55"/>
+              <path d="M 50,97 L 3,50 L 50,50 Z"  fill="#fff" opacity="0.68"/>
+            </svg>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5. Palette ───────────────────────────────────────────── -->
+  <section>
+    <div class="section-label">Icon Palette</div>
+    <div class="card" style="padding: 36px 40px;">
+      <div class="palette-row" style="border: 1px solid var(--border); border-radius:10px; overflow:hidden;">
+        <div class="swatch" style="background:#aa7252; height:64px;"></div>
+        <div class="swatch" style="background:#8b5e3c; height:64px;"></div>
+        <div class="swatch" style="background:#7a4e2e; height:64px;"></div>
+        <div class="swatch" style="background:#5a3822; height:64px;"></div>
+        <div class="swatch" style="background:#faf9f7; height:64px; border-left: 1px solid var(--border);"></div>
+        <div class="swatch" style="background:#e5dfd6; height:64px;"></div>
+      </div>
+      <div style="display:flex; gap:0; margin-top:10px;">
+        <div style="flex:1; font-family:var(--display); font-size:9.5px; color:var(--text-faint); text-align:center;">#aa7252</div>
+        <div style="flex:1; font-family:var(--display); font-size:9.5px; color:var(--text-faint); text-align:center;">#8b5e3c</div>
+        <div style="flex:1; font-family:var(--display); font-size:9.5px; color:var(--text-faint); text-align:center;">#7a4e2e</div>
+        <div style="flex:1; font-family:var(--display); font-size:9.5px; color:var(--text-faint); text-align:center;">#5a3822</div>
+        <div style="flex:1; font-family:var(--display); font-size:9.5px; color:var(--text-faint); text-align:center;">#faf9f7</div>
+        <div style="flex:1; font-family:var(--display); font-size:9.5px; color:var(--text-faint); text-align:center;">#e5dfd6</div>
+      </div>
+    </div>
+
+    <!-- Export instructions -->
+    <div class="export-note">
+      <strong>To generate .icns for Tauri:</strong> open this file in a browser, right-click the 1024px icon → "Save image" — or use a tool like
+      <code>svg2png</code> + <code>iconutil</code> to convert the SVG to the required sizes
+      (1024×1024, 512×512, 256×256, 128×128, 64×64, 32×32, 16×16) and package into an
+      <code>.iconset</code> folder, then run <code>iconutil -c icns sage.iconset</code>.
+      Drop the resulting <code>sage.icns</code> into <code>src-tauri/icons/</code>.
+    </div>
+
+  </section>
+
+</body>
+</html>
