@@ -297,3 +297,114 @@ Let other apps send queries to sage via a local HTTP endpoint. Your own scripts,
 ---
 
 *This list is alive. Add to it, cross things off, argue with it.*
+
+---
+
+## 🔁 Iteration 2 — deeper cuts
+
+### 61. Onboarding flow
+Currently a blank slate on first launch — confusing for non-technical users. A 3-step onboarding:
+1. Paste your OpenRouter key (with a link to get one, estimated cost: "~$1 for 1000 messages")
+2. Pick a default model
+3. Tell sage two sentences about yourself (seeds the user profile)
+Done. Under 60 seconds.
+
+### 62. Smart conversation title generation
+Current titles are just the first 50 characters of the user's first message. Instead, after the first AI response, silently generate a 5-word descriptive title. "Should I quit?" → "Weighing the job exit decision." Makes history far more navigable.
+
+### 63. Token / cost estimator
+A subtle indicator showing estimated cost of the current conversation (based on model pricing from OpenRouter). Most users have no idea what they're spending. Demystifies the BYOK model and builds trust.
+- Show as: `~$0.003` next to the model selector
+- OpenRouter publishes pricing per model in their API
+
+### 64. Conversation templates
+Pre-built conversation starters with structure — not just a single prompt but a guided flow:
+- **Weekly review** — "What did I ship this week? What got in my way? What matters next?"
+- **Decision framework** — "What am I deciding? What are my options? What am I afraid of?"
+- **1:1 prep** — "Who is this with? What do I want from this conversation? What do they need from me?"
+These aren't modes — they're structured multi-turn scaffolds. User picks one from a menu and sage guides the conversation.
+
+### 65. System prompt transparency
+A small "view prompt" link in settings that shows the exact system prompt being sent (including the active mode modifier). Builds trust with power users who want to know exactly what sage is saying to the model.
+
+### 66. Hotkey to copy last response
+`Cmd+Shift+C` copies just the most recent assistant message. Faster than highlighting and copying manually — useful when you want to paste the answer somewhere else.
+
+### 67. Drag-to-reorder conversation history
+Allow drag-and-drop reordering of threads in the history drawer. Lets users curate their active threads to the top without pinning.
+
+### 68. Character / persona mode
+Beyond thinking frameworks — let users invoke a persona: "respond as a skeptical VC," "respond as my future self 10 years from now," "respond as a therapist." Separate from modes, combinable with them.
+
+### 69. Thinking time investment display
+Show the total time spent thinking in sage: "You've had 47 conversations totaling about 3 hours of thinking time." A subtle signal that builds identity around the practice of deliberate thinking.
+
+### 70. Export to Obsidian / Notion / Readwise
+One-click export that formats the conversation for specific destinations:
+- **Obsidian**: Markdown with front matter (`date`, `tags`, `mode`)
+- **Notion**: Formatted blocks via Notion API
+- **Readwise**: Highlights extracted, formatted as Reader import
+
+### 71. "What should I think about?" prompt
+An empty-state button below the topic wall: "Not sure what to explore? Let sage suggest." sage looks at recent conversation themes and suggests 3 specific questions worth exploring now. Proactive rather than reactive.
+
+### 72. Response annotation / highlighting
+Let users highlight any part of an AI response and tag it: ⭐ important, ❓ questionable, ✓ agreed. Annotations persist with the conversation. Makes reviewing old threads faster.
+
+### 73. Keyboard-only mode
+Full keyboard navigation: Tab between header/input/history, j/k to scroll messages, r to reply, n for new conversation. For users who never want to reach for the mouse.
+
+### 74. Thinking "depth" indicator
+A subtle progress-like signal that shows how deep the current conversation has gone — based on message count and topic transitions. "Surface → exploring → deep." Not gamification, just orientation.
+
+### 75. Per-conversation model override
+Currently the model is global. Let users set a different model per conversation — useful for having "my Gemini threads" and "my Claude threads" without constantly toggling.
+
+---
+
+## 🔬 Technical improvements (code quality & architecture)
+
+### T1. Model list from OpenRouter API
+Hardcoded `MODELS` array in app.js goes stale. Fetch the list dynamically from `openrouter.ai/api/v1/models`, filter to capable text models, cache for 24h. Users always see current models.
+
+### T2. Conversation export format versioning
+The JSON store has no schema version. If the data model changes (e.g. adding memory/annotations), there's no migration path. Add a `store_version: 1` field now, before it matters.
+
+### T3. Input sanitization on export
+The `exportConversation()` markdown export uses raw message content. If a message contains markdown that breaks the export structure, it can produce malformed output. Escape or fence appropriately.
+
+### T4. Test coverage for app.js
+`search.js` has solid tests. `app.js` has none. At minimum, test:
+- `buildSystemPrompt()` with and without mode
+- `getConversationTitle()` edge cases
+- `saveCurrentConversation()` deduplication logic
+
+### T5. Error boundary for streaming failures
+If a stream fails mid-response (network drop, API timeout), the partial response gets committed to `messages[]` with no indication it's incomplete. Add a `[response truncated]` marker and a retry button.
+
+### T6. Debounce `saveCurrentConversation()`
+Currently saves on every assistant response. For rapid back-and-forth, this hammers disk I/O unnecessarily. Debounce to 500ms after the last change.
+
+### T7. Remove CDN dependency for streaming-markdown
+`smd.min.js` is loaded from `cdn.jsdelivr.net` on every launch. This breaks offline use and is a supply-chain dependency. Bundle it locally in `frontend/vendor/`.
+
+### T8. Memory leak in MutationObserver
+In `sendMessage()`, a `MutationObserver` is created for each message but `observer.disconnect()` only runs in the `finally` block. If the component is cleaned up mid-stream (e.g. new conversation started), the observer leaks. Guard against this.
+
+---
+
+## 💭 System prompt experiments worth trying
+
+The system prompt is the soul of sage. These variants are worth A/B testing:
+
+### SP1. More confrontational default
+Current prompt is collegial. Try: *"Your job is not to comfort — it's to find what's wrong with the thinking. If the reasoning is sound, say so briefly. If it's not, say exactly why, specifically."* May produce more valuable pushback.
+
+### SP2. Shorter responses by default
+Add to system prompt: *"Default to responses under 150 words. Go longer only if the question genuinely requires it and the user has written more than 100 words themselves."* Matches the conversational feel better.
+
+### SP3. Explicit anti-sycophancy instruction
+*"Never start a response with agreement or validation. Never say 'great question,' 'absolutely,' or 'of course.' If the user is right, say why. If they're wrong, say why."* Research shows this meaningfully changes model behavior.
+
+### SP4. Memory-aware prompt prefix
+When user profile exists, prepend: *"Here is what you know about this person: [profile]. Use this context naturally — don't reference it explicitly unless it's directly relevant."*
