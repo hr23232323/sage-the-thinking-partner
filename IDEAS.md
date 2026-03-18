@@ -553,6 +553,103 @@ Not every idea is worth building. Before starting anything, ask:
 7. Action item extraction (#27)
 8. Anti-sycophancy system prompt (#SP3)
 
+---
+
+## 🛠️ Implementation specs — top 3 quick wins
+
+Ready-to-build notes for the highest-impact features.
+
+### Spec: Global hotkey (#1)
+
+**Tauri plugin:** `tauri-plugin-global-shortcut` (official, v2 compatible)
+
+**Cargo.toml addition:**
+```toml
+tauri-plugin-global-shortcut = "2"
+```
+
+**lib.rs changes:**
+```rust
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
+
+// Inside setup():
+let shortcut = Shortcut::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::Space);
+app.global_shortcut().on_shortcut(shortcut, |app, _shortcut, _event| {
+    if let Some(window) = app.get_webview_window("main") {
+        if window.is_visible().unwrap_or(false) {
+            let _ = window.hide();
+        } else {
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+    }
+})?;
+```
+
+**Settings UI:** Add a "Global shortcut" row to the settings panel. Show current binding, clicking it enters "press a key combo" capture mode.
+
+**Edge case:** If the shortcut conflicts with another app, show an error in settings and let user change it.
+
+---
+
+### Spec: User profile / persistent context (#11)
+
+**Storage:** Add `profile: Option<String>` to the prefs struct in `lib.rs`. Plain text, user-written, up to ~500 chars.
+
+**UI:** New row in settings panel below the model picker:
+```html
+<div class="sp-row">
+  <span class="sp-label">about you</span>
+  <textarea id="profile-input" placeholder="Your role, goals, context sage should always know…" rows="3" maxlength="500"></textarea>
+  <button id="save-profile-btn">save</button>
+</div>
+```
+
+**System prompt injection** in `buildSystemPrompt()`:
+```js
+function buildSystemPrompt(mode) {
+  const profile = getProfile(); // reads from stored prefs
+  let s = SYSTEM_PROMPT;
+  if (profile?.trim()) {
+    s = `Context about the person you're thinking with:\n${profile.trim()}\n\n` + s;
+  }
+  if (mode && MODE_PROMPTS[mode]) s += `\n\n${MODE_PROMPTS[mode]}`;
+  return s;
+}
+```
+
+**Empty state nudge:** After 5 conversations with no profile set, show a subtle one-time prompt in the empty state: *"Help sage know you better →"*
+
+---
+
+### Spec: Smart conversation titles (#62)
+
+**When:** After the first assistant response in a new conversation, fire a background (non-streaming) call to a cheap model:
+
+```js
+async function generateTitle(messages, apiKey, model) {
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "qwen/qwen3-32b:nitro", // always cheap model, regardless of user's selection
+      messages: [
+        { role: "system", content: "Generate a 4-6 word title for this conversation. Return only the title, no quotes, no punctuation." },
+        ...messages.slice(0, 2) // just the first user + assistant turn
+      ],
+      stream: false,
+      max_tokens: 20,
+    })
+  });
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() ?? null;
+}
+```
+
+Call this after `fullText` is committed, before `saveCurrentConversation()`. If it returns a title, set it on `currentConversation.title`. Cost: ~$0.0001 per conversation.
+
+---
+
 ### Build in 60–90 days
 9. Custom modes (#4)
 10. Voice input (#17)
