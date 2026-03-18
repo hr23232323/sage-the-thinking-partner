@@ -36,10 +36,10 @@ The exact technical path of your data: `your keyboard → sage → OpenRouter AP
 ## Features
 
 - **Menu bar app** — always one click away, out of the way when you don't need it
-- **Thinking modes** — steelman, devil's advocate, first principles, simplify
-- **Conversation history** — threads saved locally, browsable in the sidebar
-- **Model picker** — swap between Gemini, Claude, GPT-4o, Qwen and more via OpenRouter
-- **Web search toggle** — append `:online` to any model for grounded responses
+- **Thinking modes** — type `/` to pick a mode for any message: steelman, devil's advocate, first principles, or simplify
+- **Live web search** — when your question needs current info, sage searches and shows you exactly what it's looking for in real time; steps collapse once your answer arrives but stay accessible as a toggle
+- **Conversation history** — threads saved locally, searchable, exportable to Markdown
+- **Model picker** — Qwen 3 by default; swap to Gemini 2.5 Pro, Claude Sonnet, GPT-4o and more via OpenRouter
 - **Streaming responses** — rendered as markdown in real time
 - **Topic starters** — a scrolling wall of prompts to get unstuck
 
