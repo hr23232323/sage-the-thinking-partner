@@ -408,3 +408,167 @@ Add to system prompt: *"Default to responses under 150 words. Go longer only if 
 
 ### SP4. Memory-aware prompt prefix
 When user profile exists, prepend: *"Here is what you know about this person: [profile]. Use this context naturally — don't reference it explicitly unless it's directly relevant."*
+
+---
+
+## ✍️ Iteration 3 — writing companion & deeper cuts
+
+### Writing companion features
+
+sage currently helps you *think*. It's a short step to helping you *write*. These features keep the tool focused (not a full writing app) while unlocking enormous value:
+
+### 76. Paragraph-by-paragraph drafting
+User writes one paragraph, sage responds with: critique, a rewrite, or a "what comes next" prompt. Turns sage into a writing partner for essays, emails, proposals. Toggle with a "drafting" mode chip.
+
+### 77. Voice-to-prose
+Speak a rambling idea out loud (via voice input) → sage cleans it into a clear, structured paragraph in your voice. The missing link between raw thought and written output.
+
+### 78. "Argue against this draft" button
+One-click: paste any text you've written → sage plays devil's advocate specifically against *what you wrote*, not what you said. Catches blind spots before you publish or send.
+
+### 79. Rewrite in my voice
+After several conversations, sage has seen how you write. A "rewrite this" button takes pasted text and reformulates it to match your demonstrated style and vocabulary. Local, no training required — just in-context learning.
+
+### 80. TL;DR generator
+One-click summary of any long assistant response. Not a permanent feature — a small button that appears on responses over ~400 words. One tap, the response collapses to 3 bullet points.
+
+---
+
+### Native Mac app integrations (no server required)
+
+These all work via URL schemes or AppleScript — no backend, stays local-first:
+
+### 81. Apple Calendar context
+Before a meeting, open sage and it automatically pulls in the next event: title, attendees, duration. Instantly primes the "help me prep for this" conversation. Uses `EKEventStore` via Tauri's Rust layer.
+
+### 82. Apple Reminders / Things 3 push
+After extracting action items (#27), push them directly to Reminders or Things 3 via their URL schemes. `things:///add?title=...` — no API key, no account. One click from sage to your task manager.
+
+### 83. Bear / Obsidian note creation
+Export a conversation summary directly into Bear or Obsidian via their URL schemes. `bear://x-callback-url/create?title=...&text=...` — creates a new note in your PKM instantly.
+
+### 84. Safari / browser context
+When sage opens from the browser (via global hotkey), detect the active tab URL via AppleScript and offer to fetch + analyze the page content. Combines with URL input detection (#21).
+
+### 85. Mail.app reply drafting
+Trigger sage from Mail via share extension → sage sees the email thread, helps you think through the response, then drafts it. Paste back into Mail with one click.
+
+---
+
+### Psychological depth — features grounded in cognitive science
+
+### 86. Fast thinking vs. slow thinking toggle
+Based on Kahneman's System 1 / System 2 model:
+- **Fast (System 1):** sage gives you an immediate gut-check response — quick, instinctive, brief.
+- **Slow (System 2):** sage takes its time, asks clarifying questions, considers second-order effects.
+Users often need both in different situations. Could be as simple as a "quick take" vs "think it through" button alongside Send.
+
+### 87. Cognitive bias detection
+When the model detects reasoning patterns associated with known biases (sunk cost, confirmation bias, availability heuristic), it gently surfaces it: *"This might be sunk cost reasoning — you've invested 2 years, but does that change whether it's the right path forward?"*
+- Add to system prompt: "If you detect a cognitive bias in the user's reasoning, name it explicitly and briefly explain why it might be distorting their thinking."
+
+### 88. Emotional check-in
+Before diving into logic, a brief "how are you feeling about this?" prompt that surfaces emotional context. Research shows decisions made in high-stress states are systematically worse. sage acknowledging the emotional layer — not to therapize, but to contextualize — would be meaningfully different from every other AI tool.
+
+### 89. Pre-mortem vs. post-mortem toggle
+**Pre-mortem:** Assume this goes wrong. What killed it?
+**Post-mortem:** This already failed. What happened?
+Slightly different framing, both invaluable. Currently "pre-mortem" would be one of the new modes (#3). Worth making both accessible.
+
+### 90. "Challenge my assumptions" button
+One-click on any sent message: sage lists every unstated assumption embedded in your question and briefly challenges each one. Surfaces hidden premises you didn't know you had.
+
+---
+
+### Prompt history & reuse
+
+### 91. Prompt history
+Arrow-up in the compose field cycles through your previous messages (like terminal history). Simple. Saves retyping prompts you use repeatedly.
+
+### 92. Saved prompts library
+Beyond custom modes — save any *specific prompt* for later reuse. "Analyze the tradeoffs of X" saved as a reusable template. Accessible via `//` (double slash) in the compose field, separate from `/` mode picker.
+
+### 93. Most-used prompts surfacing
+After 50+ conversations, sage detects your 5 most common question patterns and surfaces them as quick chips in the empty state. Personalizes the topic wall to your actual usage.
+
+---
+
+### API & cost intelligence
+
+### 94. Per-model cost breakdown
+In settings, a simple table: for each model, show cost per 1K input/output tokens (fetched from OpenRouter), and your estimated spend this month based on conversation history. Makes the BYOK model feel transparent and trustworthy.
+
+### 95. Budget alerts
+Optional: set a monthly budget (e.g. $10). sage tracks estimated usage and notifies you when you're at 80% and 100%. Prevents bill shock for new users who don't understand token pricing.
+
+### 96. Smart model routing by cost
+A "budget mode" toggle: automatically routes to the cheapest capable model for simple questions (Qwen 3) and only upgrades to more expensive models (Gemini 2.5 Pro, Sonnet) when the question is complex. Keeps costs low without sacrificing quality where it matters.
+
+---
+
+### Community & ecosystem
+
+### 97. Mode sharing
+Export any custom mode as a shareable JSON snippet. Post it on GitHub, Discord, Twitter. Others paste it in and import. Builds a community meta-layer around sage without requiring any backend.
+
+### 98. "Thoughts" public page (opt-in)
+An opt-in feature: selected conversations (user explicitly marks them) get exported to a simple static site generator. Your published thinking, in sage's aesthetic. A public-facing "digital garden" generated from your private thinking tool.
+
+### 99. Developer API (local HTTP)
+A localhost REST API that other tools can call: `POST localhost:42069/think {"message": "...", "mode": "steelman"}`. Lets Alfred, Raycast, Shortcuts, and custom scripts invoke sage as a reasoning engine. No external server — just a local socket.
+
+### 100. Open mode registry
+A community-maintained GitHub repo of custom modes. Anyone can submit a `.json` with name, description, and system prompt modifier. sage fetches and displays them in an "explore modes" panel. Turns the mode system into an ecosystem.
+
+---
+
+## ✅ Validation framework — how to decide what to build
+
+Not every idea is worth building. Before starting anything, ask:
+
+| Question | What you're checking |
+|---|---|
+| Does it reduce friction to *open* sage? | Daily active usage |
+| Does it make sage feel like it *knows* you? | Retention / depth |
+| Does it produce something *usable outside* sage? | Perceived value |
+| Can it be built without a backend? | Local-first principle |
+| Would a non-technical user understand it in 10 seconds? | Adoption |
+| Does it make conversations better, or just longer? | Quality signal |
+
+**The five-user test:** Before building a feature, describe it to 5 people. If fewer than 3 immediately say "I would use that," reconsider. Ideas that feel clever in isolation often dissolve under scrutiny.
+
+**The 30-day test:** Would someone use this feature at least weekly after 30 days? Features that are impressive once but fade are traps. The best features (global hotkey, memory, custom modes) become invisible infrastructure you depend on.
+
+---
+
+## 📊 Final priority ranking (all 100 ideas)
+
+### Build in the next 30 days
+1. Global hotkey (#1)
+2. User profile / persistent context (#11)
+3. Selected text as context (#2)
+4. More thinking modes — rubber duck, pre-mortem, Socratic (#3)
+5. Resizable window (#6)
+6. Smart conversation title generation (#62)
+7. Action item extraction (#27)
+8. Anti-sycophancy system prompt (#SP3)
+
+### Build in 60–90 days
+9. Custom modes (#4)
+10. Voice input (#17)
+11. Full-text conversation search (#7)
+12. Prompt history / arrow-up (#91)
+13. Challenge my assumptions button (#90)
+14. Cognitive bias detection (#87)
+15. Things 3 / Reminders push (#82)
+16. Paragraph drafting mode (#76)
+17. Bundle streaming-markdown locally (#T7)
+
+### Longer-term (3–6 months)
+18. Project memory (#12)
+19. Conversation branching (#15)
+20. Proactive thought resurface (#14)
+21. Apple Calendar context (#81)
+22. Developer API / localhost (#99)
+23. Mode sharing ecosystem (#97)
+24. iCloud sync (#47)
